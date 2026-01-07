@@ -1,386 +1,1221 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import {
+  Phone,
+  Clock,
+  MapPin,
+  Sparkles,
+  Home,
+  Building2,
+  User,
+  Check,
+  X,
+} from "lucide-react";
 
-export default function App() {
+const VivifySpaWebsite = () => {
+  const [emailJsReady, setEmailJsReady] = useState(false);
+
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src =
+      "https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js";
+    script.async = true;
+    script.onload = () => {
+      window.emailjs.init("0n5VR5rLZ4B0HrtlN");
+      setEmailJsReady(true);
+      console.log("✅ EmailJS loaded and initialized successfully");
+    };
+    script.onerror = () => {
+      console.error("❌ Failed to load EmailJS script");
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
+
+  const [selectedService, setSelectedService] = useState("");
+  const [serviceType, setServiceType] = useState("studio");
+  const [therapistGender, setTherapistGender] = useState("");
+  const [duration, setDuration] = useState("");
+  const [appointmentDate, setAppointmentDate] = useState("");
+  const [appointmentTime, setAppointmentTime] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [paymentOption, setPaymentOption] = useState("full");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState(null);
+
+  const services = [
+    {
+      id: "swedish",
+      name: "Swedish Relaxation",
+      description:
+        "Gentle, flowing strokes to promote relaxation and improve circulation. Best for stress relief",
+      image:
+        "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&h=300&fit=crop",
+      badge: "Popular",
+    },
+    {
+      id: "deep-tissue",
+      name: "Deep Tissue Recovery",
+      description:
+        "Targeted pressure to release chronic muscle tension. Ideal for inflammation and injury recovery",
+      image:
+        "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=400&h=300&fit=crop",
+      badge: "Standard",
+    },
+    {
+      id: "full-body",
+      name: "Full Body Rejuvenation",
+      description:
+        "A comprehensive head-to-toe treatment combining multiple techniques for total renewal",
+      image:
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=400&h=300&fit=crop",
+      badge: "Premium",
+    },
+  ];
+
+  const pricing = {
+    studio: { 60: 20000, 90: 30000, 120: 40000 },
+    mobile: { 60: 30000, 90: 45000, 120: 60000 },
+  };
+
+  const studioTimeSlots = [
+    "9:00 AM",
+    "10:00 AM",
+    "11:00 AM",
+    "12:00 PM",
+    "1:00 PM",
+    "2:00 PM",
+    "3:00 PM",
+    "4:00 PM",
+    "5:00 PM",
+    "6:00 PM",
+  ];
+
+  const mobileTimeSlots = [
+    "7:00 AM",
+    "8:00 AM",
+    "9:00 AM",
+    "10:00 AM",
+    "11:00 AM",
+    "12:00 PM",
+    "1:00 PM",
+    "2:00 PM",
+    "3:00 PM",
+    "4:00 PM",
+    "5:00 PM",
+    "6:00 PM",
+    "7:00 PM",
+    "8:00 PM",
+    "9:00 PM",
+    "10:00 PM",
+    "11:00 PM",
+    "12:00 AM",
+  ];
+
+  const scrollToBooking = () => {
+    const bookingSection = document.getElementById("booking-section");
+    if (bookingSection) {
+      bookingSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  // Get today's date in YYYY-MM-DD format for min date
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  };
+
+  // Get max date (3 months from now)
+  const getMaxDate = () => {
+    const maxDate = new Date();
+    maxDate.setMonth(maxDate.getMonth() + 3);
+    return maxDate.toISOString().split("T")[0];
+  };
+
+  const getCurrentPrice = () => {
+    if (!duration) return 0;
+    return pricing[serviceType][duration];
+  };
+
+  const formatPrice = (price) => {
+    return `₦${price.toLocaleString()}`;
+  };
+
+  const getPaymentAmount = () => {
+    const totalPrice = getCurrentPrice();
+    if (serviceType === "studio" && paymentOption === "deposit") {
+      return totalPrice * 0.5;
+    }
+    return totalPrice;
+  };
+
+  const sendWhatsAppNotification = (bookingData) => {
+    const message =
+      `*🌟 NEW BOOKING - Vivify Massage & Spa*\n\n` +
+      `*Customer Details:*\n` +
+      `👤 Name: ${bookingData.customerName}\n` +
+      `📱 Phone: ${bookingData.customerPhone}\n\n` +
+      `*Service Details:*\n` +
+      `💆 Service: ${bookingData.service}\n` +
+      `📍 Location: ${bookingData.serviceType}\n` +
+      `👥 Therapist: ${bookingData.therapist}\n` +
+      `⏱️ Duration: ${bookingData.duration}\n` +
+      `📅 Date: ${bookingData.appointmentDate}\n` +
+      `🕐 Time: ${bookingData.appointmentTime}\n\n` +
+      `*Payment Details:*\n` +
+      `💰 Total Amount: ${formatPrice(bookingData.totalAmount)}\n` +
+      `💳 Payment Required: ${formatPrice(bookingData.paymentAmount)}\n` +
+      `📝 Payment Type: ${bookingData.paymentType}`;
+
+    const whatsappNumber = "2347040723894";
+    const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+      message
+    )}`;
+    window.open(whatsappLink, "_blank");
+  };
+
+  const sendBookingNotification = async (bookingData) => {
+    if (!emailJsReady || !window.emailjs) {
+      console.error("❌ EmailJS not loaded yet");
+      sendWhatsAppNotification(bookingData);
+      return;
+    }
+
+    console.log("📧 Attempting to send email...");
+    console.log("Booking Data:", bookingData);
+
+    try {
+      const response = await window.emailjs.send(
+        "service_ecto2f3",
+        "template_21t9zbr",
+        {
+          customer_name: bookingData.customerName,
+          customer_phone: bookingData.customerPhone,
+          service: bookingData.service,
+          service_type: bookingData.serviceType,
+          therapist: bookingData.therapist,
+          duration: bookingData.duration,
+          appointment_date: bookingData.appointmentDate,
+          appointment_time: bookingData.appointmentTime,
+          total_amount: formatPrice(bookingData.totalAmount),
+          payment_amount: formatPrice(bookingData.paymentAmount),
+          payment_type: bookingData.paymentType,
+          booking_date: new Date(bookingData.bookingDate).toLocaleString(),
+        }
+      );
+
+      console.log("✅ Email sent successfully!", response);
+    } catch (error) {
+      console.error("❌ Email sending failed:", error);
+      sendWhatsAppNotification(bookingData);
+    }
+  };
+
+  const handleBooking = async () => {
+    if (
+      !selectedService ||
+      !serviceType ||
+      !therapistGender ||
+      !duration ||
+      !appointmentDate ||
+      !appointmentTime ||
+      !customerName ||
+      !customerPhone
+    ) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    const bookingData = {
+      customerName,
+      customerPhone,
+      service: services.find((s) => s.id === selectedService)?.name,
+      serviceType:
+        serviceType === "studio" ? "Massage Studio" : "Mobile Service",
+      therapist:
+        therapistGender === "any"
+          ? "No Preference"
+          : therapistGender === "male"
+          ? "Male"
+          : "Female",
+      duration: `${duration} minutes`,
+      appointmentDate,
+      appointmentTime,
+      totalAmount: getCurrentPrice(),
+      paymentAmount: getPaymentAmount(),
+      paymentType:
+        serviceType === "studio"
+          ? paymentOption === "full"
+            ? "Full Payment"
+            : "50% Deposit"
+          : "Pay After Session",
+      bookingDate: new Date().toISOString(),
+    };
+
+    // Simulate processing time
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    if (serviceType === "studio") {
+      setIsLoading(false);
+      initiateMonnifyPayment(bookingData);
+      return;
+    }
+
+    await sendBookingNotification(bookingData);
+
+    setBookingDetails(bookingData);
+    setIsLoading(false);
+    setShowSuccessModal(true);
+
+    // Auto-close modal after 5 seconds
+    setTimeout(() => {
+      setShowSuccessModal(false);
+      resetForm();
+    }, 5000);
+  };
+
+  const initiateMonnifyPayment = (bookingData) => {
+    if (typeof window.MonnifySDK === "undefined") {
+      sendBookingNotification(bookingData);
+      setBookingDetails(bookingData);
+      setShowSuccessModal(true);
+
+      setTimeout(() => {
+        setShowSuccessModal(false);
+        resetForm();
+      }, 2000);
+      return;
+    }
+
+    window.MonnifySDK.initialize({
+      amount: getPaymentAmount(),
+      currency: "NGN",
+      reference: `VMS_${Date.now()}`,
+      customerFullName: bookingData.customerName,
+      customerEmail: "customer@email.com",
+      customerMobileNumber: bookingData.customerPhone,
+      apiKey: "MK_TEST_SAT7HR5F3H",
+      contractCode: "4934121693",
+      paymentDescription: `${bookingData.service} - ${bookingData.duration}`,
+      isTestMode: true,
+      metadata: {
+        bookingId: bookingData.bookingDate,
+        serviceType: bookingData.serviceType,
+      },
+      onComplete: function (response) {
+        bookingData.paymentReference = response.transactionReference;
+        bookingData.paymentStatus = "Paid";
+        sendBookingNotification(bookingData);
+        setBookingDetails(bookingData);
+        setShowSuccessModal(true);
+
+        setTimeout(() => {
+          setShowSuccessModal(false);
+          resetForm();
+        }, 5000);
+      },
+      onClose: function () {
+        console.log("Payment window closed");
+      },
+    });
+  };
+
+  const resetForm = () => {
+    setSelectedService("");
+    setTherapistGender("");
+    setDuration("");
+    setAppointmentDate("");
+    setAppointmentTime("");
+    setCustomerName("");
+    setCustomerPhone("");
+    setPaymentOption("full");
+    setBookingDetails(null);
+  };
+
+  const closeModal = () => {
+    setShowSuccessModal(false);
+    resetForm();
+  };
+
+  const isFormComplete =
+    selectedService &&
+    serviceType &&
+    therapistGender &&
+    duration &&
+    appointmentDate &&
+    appointmentTime &&
+    customerName &&
+    customerPhone;
+
   return (
-    <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-[#f6f8f7] dark:bg-[#11211c] font-sans text-[#36454F] dark:text-[#f5f1e8]">
-      <div className="layout-container flex h-full grow flex-col">
-        <div className="flex flex-1 justify-center">
-          <div className="layout-content-container flex flex-col max-w-[1280px] flex-1">
-            {/* Header */}
-            <header className="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#f5f1e8]/50 dark:border-b-[#36454F]/20 px-4 sm:px-6 lg:px-10 py-3 sm:py-4 bg-[#f6f8f7]/80 dark:bg-[#11211c]/80 backdrop-blur-sm">
-              <div className="flex items-center gap-2 sm:gap-4 text-[#36454F] dark:text-[#f5f1e8]">
-                <div className="size-5 sm:size-6">
-                  <svg
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-3.5l6-4.5-6-4.5v9z"></path>
-                  </svg>
-                </div>
-                <h2 className="font-serif text-base sm:text-lg lg:text-xl font-bold leading-tight tracking-[-0.015em]">
-                  Vivify Massage and Spa
-                </h2>
-              </div>
-              <div className="flex flex-1 justify-end gap-4 sm:gap-8">
-                <div className="hidden md:flex items-center gap-4 lg:gap-9">
-                  <a
-                    className="text-[#36454F] dark:text-[#f5f1e8] text-xs lg:text-sm font-medium leading-normal hover:text-[#a3b8a3] dark:hover:text-[#d8b2a9] transition-colors"
-                    href="#home"
-                  >
-                    Home
-                  </a>
-                  <a
-                    className="text-[#36454F] dark:text-[#f5f1e8] text-xs lg:text-sm font-medium leading-normal hover:text-[#a3b8a3] dark:hover:text-[#d8b2a9] transition-colors"
-                    href="#services"
-                  >
-                    Services
-                  </a>
-                  <a
-                    className="text-[#36454F] dark:text-[#f5f1e8] text-xs lg:text-sm font-medium leading-normal hover:text-[#a3b8a3] dark:hover:text-[#d8b2a9] transition-colors"
-                    href="#booking"
-                  >
-                    Booking
-                  </a>
-                  <a
-                    className="text-[#36454F] dark:text-[#f5f1e8] text-xs lg:text-sm font-medium leading-normal hover:text-[#a3b8a3] dark:hover:text-[#d8b2a9] transition-colors"
-                    href="#about"
-                  >
-                    About
-                  </a>
-                  <a
-                    className="text-[#36454F] dark:text-[#f5f1e8] text-xs lg:text-sm font-medium leading-normal hover:text-[#a3b8a3] dark:hover:text-[#d8b2a9] transition-colors"
-                    href="#contact"
-                  >
-                    Contact
-                  </a>
-                </div>
-                <a
-                  className="flex min-w-[70px] sm:min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-8 sm:h-10 px-3 sm:px-4 bg-[#a3b8a3] text-white text-xs sm:text-sm font-bold leading-normal tracking-[0.015em] hover:bg-[#a3b8a3]/90 transition-colors"
-                  href="https://vivifymassageandspa.setmore.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span className="truncate">Book Now</span>
-                </a>
-              </div>
-            </header>
-
-            <main className="flex-grow">
-              {/* Hero Section */}
-              <section id="home">
-                <div
-                  className="relative min-h-[70vh] sm:min-h-[80vh] lg:min-h-[calc(100vh-80px)] flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 bg-cover bg-center"
-                  style={{
-                    backgroundImage:
-                      'linear-gradient(rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.5) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuBiudgHGAkLirWJENYwU3KJcrcObR7ZldLqk8IvEa7-63_6iqCspa9LwgIf_C7CKojtVjMIv44XJ-gwTegUdgj-DN6EW_k6g7aXfAWK-z5OyN1y-hRm3Q5Ks30SmukfWw8sdKwv9X5F3pKzuTm0hIstI_9R88-w-9Zn9xM4pk7j5phhaM-lSn33mR9z1n0k6iY3_CO8GyqlP8ZwMlTOu3fT8yjMq1ab0ecmOhUYsFQ63oOrW0iVXfNzQWCbxN6-rWkaU4J1ffYs25PD")',
-                  }}
-                >
-                  <div className="flex flex-col gap-3 sm:gap-4 text-center max-w-4xl mx-auto px-4">
-                    <h1 className="text-white font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight tracking-tight">
-                      Find Your Inner Peace
-                    </h1>
-                    <h2 className="text-[#f5f1e8] text-base sm:text-lg md:text-xl font-light leading-normal px-4">
-                      Experience the ultimate relaxation and rejuvenation at
-                      Vivify Massage and Spa.
-                    </h2>
-                  </div>
-                  <a
-                    className="mt-6 sm:mt-8 flex min-w-[140px] sm:min-w-[180px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-11 sm:h-12 lg:h-14 px-5 sm:px-6 lg:px-8 bg-[#a3b8a3] text-white text-sm sm:text-base lg:text-lg font-bold leading-normal tracking-[0.015em] hover:bg-[#a3b8a3]/90 transition-transform transform hover:scale-105"
-                    href="https://vivifymassageandspa.setmore.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <span className="truncate">Book an Appointment</span>
-                  </a>
-                </div>
-              </section>
-
-              {/* Services Section */}
-              <section
-                className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-10 bg-[#f5f1e8] dark:bg-[#36454F]/10"
-                id="services"
-              >
-                <h2 className="text-center font-serif text-[#36454F] dark:text-[#f5f1e8] text-3xl sm:text-4xl font-bold leading-tight tracking-tight mb-8 sm:mb-12">
-                  Our Services
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
-                  <div className="flex flex-col gap-4 pb-4 bg-[#f6f8f7] dark:bg-[#11211c] rounded-xl shadow-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300">
-                    <div
-                      className="w-full h-40 sm:h-48 bg-center bg-no-repeat bg-cover"
-                      style={{
-                        backgroundImage:
-                          'url("https://lh3.googleusercontent.com/aida-public/AB6AXuD98k2uRgwQZLumR5bw5fXV2-tvtTgZOJze3rguCEO4HlsjByrqIo4E7jYMK_Kz_lZ8BGPSHlm-a91U9ANSXrdfu-G6RIxMzfVVbPlvI-f4vUGsK1dQ0Ql_0hA1h6DE5KWiqVGOCTxtHvOYdyE2nKd-N7heK1uVPA7C4a5-K-VHAUA11Gy635ejGQ0FrqHjB6y2aYh5sJv7QEMT2-uFLJfyU2KblxEf6AV8Ftr9_xBY0jURIKExg2e-Ans82yeyY2sURgGw-DzAvOoH")',
-                      }}
-                    ></div>
-                    <div className="p-4">
-                      <p className="text-[#36454F] dark:text-[#f5f1e8] text-lg sm:text-xl font-serif font-bold leading-normal">
-                        Swedish Massage
-                      </p>
-                      <p className="text-[#36454F]/70 dark:text-[#f5f1e8]/70 text-sm font-normal leading-normal mt-2">
-                        A gentle massage to relax the entire body, promoting
-                        circulation and well-being.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-4 pb-4 bg-[#f6f8f7] dark:bg-[#11211c] rounded-xl shadow-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300">
-                    <div
-                      className="w-full h-40 sm:h-48 bg-center bg-no-repeat bg-cover"
-                      style={{
-                        backgroundImage:
-                          'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDYv6gPCM2LIx2AobzFXczrrreAzwLDC_4kH-QuwRx6uj-a93AU1AMEjccmcmRruFLRs3hFMX5WqkeEGF9YfNaiJlSEFyjEjAWMubqoGsnmmh5KJSCT7n-F0dnbxP0HA6K3g5x1ct8rm9_AMqaNTdHZj0lNAzBfz0m9AxQPf9TO5dM0MpobJJSw-Wi0EdDXSyKTh6BENfTXJvAI8MmBzlKAGVbSgDo8KRW0vwwp_aQUGa8kLUMT7Wm77-Osznguq57n768S8Bn55B5L")',
-                      }}
-                    ></div>
-                    <div className="p-4">
-                      <p className="text-[#36454F] dark:text-[#f5f1e8] text-lg sm:text-xl font-serif font-bold leading-normal">
-                        Deep Tissue Massage
-                      </p>
-                      <p className="text-[#36454F]/70 dark:text-[#f5f1e8]/70 text-sm font-normal leading-normal mt-2">
-                        Targets deeper layers of muscle and connective tissue
-                        for chronic aches and pains.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-4 pb-4 bg-[#f6f8f7] dark:bg-[#11211c] rounded-xl shadow-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300 sm:col-span-2 lg:col-span-1">
-                    <div
-                      className="w-full h-40 sm:h-48 bg-center bg-no-repeat bg-cover"
-                      style={{
-                        backgroundImage:
-                          'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDn7YD9uSg9yT35u9SLB4txK7lOjmoC2rzgKsuYk0gLHaAB4m8RUIS08XVkyUSANtBrOwKB9YBqSeJXIMJvUKyscBy5OiuxF0SymlDrEXXJ7q2r0mMX7epr6s35LI6x8DyPb-QiYenHGiEU755W6tj8zM9F-mmsocpHWQW8SaAEdJdMo6aWqmARH9AKndEz7d2C0iY46x8ZvMBpVgFwgxZNw_MtFdHxQf0LBcgfQWxiizgKLBzA3XEqDTovBVAdKyIIqmvFWpa9DRse")',
-                      }}
-                    ></div>
-                    <div className="p-4">
-                      <p className="text-[#36454F] dark:text-[#f5f1e8] text-lg sm:text-xl font-serif font-bold leading-normal">
-                        Full Body Massage
-                      </p>
-                      <p className="text-[#36454F]/70 dark:text-[#f5f1e8]/70 text-sm font-normal leading-normal mt-2">
-                        therapeutic treatment that involves gentle to firm
-                        techniques applied to the entire body to relieve
-                        tension, ease muscle soreness, and overall physical and
-                        mental well-being.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Testimonials Section */}
-              <section
-                className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-10 bg-[#f6f8f7] dark:bg-[#11211c]"
-                id="testimonials"
-              >
-                <div className="max-w-6xl mx-auto">
-                  <h2 className="text-center font-serif text-[#36454F] dark:text-[#f5f1e8] text-3xl sm:text-4xl font-bold leading-tight tracking-tight mb-3 sm:mb-4">
-                    What Our Clients Say
-                  </h2>
-                  <p className="text-center text-[#36454F]/70 dark:text-[#f5f1e8]/70 mb-8 sm:mb-12 max-w-2xl mx-auto text-sm sm:text-base px-4">
-                    Don't just take our word for it - hear from those who have
-                    experienced the Vivify difference
-                  </p>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                    {/* Testimonial 1 */}
-                    <div className="bg-[#f5f1e8] dark:bg-[#36454F]/10 rounded-xl shadow-lg p-6 sm:p-8 transform hover:-translate-y-2 transition-transform duration-300">
-                      <div className="flex mb-4">
-                        <span className="text-xl sm:text-2xl">⭐⭐⭐⭐⭐</span>
-                      </div>
-                      <p className="text-[#36454F] dark:text-[#f5f1e8] italic mb-6 leading-relaxed text-sm sm:text-base">
-                        "The deep tissue massage was exactly what I needed after
-                        months of back pain. The therapist was professional and
-                        really knew how to target my problem areas. I left
-                        feeling like a new person!"
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#a3b8a3] flex items-center justify-center text-white font-bold text-base sm:text-lg flex-shrink-0">
-                          AO
-                        </div>
-                        <div>
-                          <p className="font-semibold text-[#36454F] dark:text-[#f5f1e8] text-sm sm:text-base">
-                            Abimbola Omolola
-                          </p>
-                          <p className="text-xs sm:text-sm text-[#36454F]/60 dark:text-[#f5f1e8]/60">
-                            Regular Client
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Testimonial 2 */}
-                    <div className="bg-[#f5f1e8] dark:bg-[#36454F]/10 rounded-xl shadow-lg p-6 sm:p-8 transform hover:-translate-y-2 transition-transform duration-300">
-                      <div className="flex mb-4">
-                        <span className="text-xl sm:text-2xl">⭐⭐⭐⭐⭐</span>
-                      </div>
-                      <p className="text-[#36454F] dark:text-[#f5f1e8] italic mb-6 leading-relaxed text-sm sm:text-base">
-                        "On holiday in Ilorin. I came across VIVIFY MASSAGE AND
-                        SPA online. I booked and had a fantastic massage. The
-                        best in a long time. Many thanks to the lady who took
-                        care of me. She was really nice and she knows what she
-                        was doing. I will surely recommend VIVIFY MASSAGE.
-                        Thanks to Timi for the good service provided!"
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#d8b2a9] flex items-center justify-center text-white font-bold text-base sm:text-lg flex-shrink-0">
-                          RB
-                        </div>
-                        <div>
-                          <p className="font-semibold text-[#36454F] dark:text-[#f5f1e8] text-sm sm:text-base">
-                            Rahman Babalola
-                          </p>
-                          <p className="text-xs sm:text-sm text-[#36454F]/60 dark:text-[#f5f1e8]/60">
-                            Monthly Member
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Testimonial 3 */}
-                    <div className="bg-[#f5f1e8] dark:bg-[#36454F]/10 rounded-xl shadow-lg p-6 sm:p-8 transform hover:-translate-y-2 transition-transform duration-300 md:col-span-2 lg:col-span-1">
-                      <div className="flex mb-4">
-                        <span className="text-xl sm:text-2xl">⭐⭐⭐⭐⭐</span>
-                      </div>
-                      <p className="text-[#36454F] dark:text-[#f5f1e8] italic mb-6 leading-relaxed text-sm sm:text-base">
-                        "I had a great session. My shoulder and lower back pains
-                        were gone by the end of the session. The massage was
-                        exactly what I needed, it was both relaxing and
-                        effective. The massage therapist was friendly, attentive
-                        and skilled in every sense of it. Highly recommend!"
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#a3b8a3] flex items-center justify-center text-white font-bold text-base sm:text-lg flex-shrink-0">
-                          RA
-                        </div>
-                        <div>
-                          <p className="font-semibold text-[#36454F] dark:text-[#f5f1e8] text-sm sm:text-base">
-                            Rasheed Akinola
-                          </p>
-                          <p className="text-xs sm:text-sm text-[#36454F]/60 dark:text-[#f5f1e8]/60">
-                            First-Time Visitor
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="text-center mt-8 sm:mt-12">
-                    <a
-                      className="inline-flex min-w-[140px] sm:min-w-[180px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-11 sm:h-12 lg:h-14 px-5 sm:px-6 lg:px-8 bg-[#a3b8a3] text-white text-sm sm:text-base lg:text-lg font-bold leading-normal tracking-[0.015em] hover:bg-[#a3b8a3]/90 transition-transform transform hover:scale-105"
-                      href="https://vivifymassageandspa.setmore.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <span className="truncate">Book Your Experience</span>
-                    </a>
-                  </div>
-                </div>
-              </section>
-
-              {/* About Section */}
-              <section
-                className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-10 bg-[#f5f1e8] dark:bg-[#36454F]/10"
-                id="about"
-              >
-                <h2 className="text-center font-serif text-[#36454F] dark:text-[#f5f1e8] text-3xl sm:text-4xl font-bold leading-tight tracking-tight mb-8 sm:mb-12">
-                  About Vivify
-                </h2>
-                <div className="max-w-4xl mx-auto">
-                  <div className="text-[#36454F] dark:text-[#f5f1e8] text-center space-y-6">
-                    <p className="font-light leading-relaxed text-base sm:text-lg md:text-xl">
-                      Vivify was born from a passion for holistic wellness and
-                      the belief that true relaxation is a vital part of a
-                      healthy lifestyle. Our philosophy is simple: to provide a
-                      serene sanctuary where you can escape the stresses of
-                      daily life and reconnect with your mind, body, and spirit.
-                    </p>
-                    <p className="font-light leading-relaxed text-base sm:text-lg md:text-xl">
-                      Our team of expert therapists is dedicated to providing
-                      personalized treatments that cater to your unique needs.
-                      We use only the finest natural and organic products to
-                      ensure a pure and luxurious experience. Step into our
-                      tranquil oasis and let us guide you on a journey to
-                      rejuvenation and inner peace.
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Address Section */}
-              <section
-                className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-10 bg-[#f6f8f7] dark:bg-[#11211c]"
-                id="address"
-              >
-                <h2 className="text-center font-serif text-[#36454F] dark:text-[#f5f1e8] text-3xl sm:text-4xl font-bold leading-tight tracking-tight mb-8 sm:mb-12">
-                  Visit Us
-                </h2>
-                <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-start">
-                  <div className="text-[#36454F] dark:text-[#f5f1e8] order-2 lg:order-1">
-                    <h3 className="text-xl sm:text-2xl font-serif font-bold mb-3 sm:mb-4">
-                      Vivify Massage & Spa
-                    </h3>
-                    <p className="mb-2 text-sm sm:text-base">
-                      Opeyemi block industry junction, Alao farm, Tanke-Ilorin
-                    </p>
-                    <p className="mb-4 text-sm sm:text-base break-words">
-                      Contact: vivifymassageandspa@gmail.com
-                    </p>
-                    <p className="mb-4 text-sm sm:text-base break-words">
-                      07040723894
-                    </p>
-                    <h4 className="text-lg sm:text-xl font-serif font-bold mb-2">
-                      Operating Hours
-                    </h4>
-                    <p className="text-sm sm:text-base">
-                      Monday - Sunday: 9:00 AM - 6:00 PM
-                    </p>
-                    <p className="text-sm sm:text-base">
-                      Mobile Service 24/7 Everyday
-                    </p>
-                  </div>
-                  <div className="w-full h-64 sm:h-80 lg:h-96 rounded-xl overflow-hidden shadow-lg order-1 lg:order-2">
-                    <iframe
-                      allowFullScreen
-                      height="100%"
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3956.3087470728426!2d4.5418982!3d8.4799324!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x10364610e3e4f6d9%3A0x67c5b8f8f8b8f8b8!2sIlorin%2C%20Nigeria!5e0!3m2!1sen!2sng!4v1678886450917!5m2!1sen!2sng"
-                      style={{ border: 0 }}
-                      width="100%"
-                    ></iframe>
-                  </div>
-                </div>
-              </section>
-            </main>
-
-            {/* Footer */}
-            <footer className="bg-[#f5f1e8] dark:bg-[#36454F]/10 py-6 sm:py-8 px-4 sm:px-6 lg:px-10">
-              <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4">
-                <p className="text-[#36454F]/70 dark:text-[#f5f1e8]/70 text-xs sm:text-sm">
-                  © 2025 Vivify Massage and Spa. All rights reserved.
-                </p>
-                <div className="flex gap-4 sm:gap-6">
-                  <a
-                    className="text-[#36454F]/70 dark:text-[#f5f1e8]/70 hover:text-[#a3b8a3] dark:hover:text-[#d8b2a9] transition-colors text-xl sm:text-2xl"
-                    href="#"
-                  >
-                    <span>🌿</span>
-                  </a>
-                  <a
-                    className="text-[#36454F]/70 dark:text-[#f5f1e8]/70 hover:text-[#a3b8a3] dark:hover:text-[#d8b2a9] transition-colors text-xl sm:text-2xl"
-                    href="#"
-                  >
-                    <span>💆</span>
-                  </a>
-                  <a
-                    className="text-[#36454F]/70 dark:text-[#f5f1e8]/70 hover:text-[#a3b8a3] dark:hover:text-[#d8b2a9] transition-colors text-xl sm:text-2xl"
-                    href="#"
-                  >
-                    <span>🧘</span>
-                  </a>
-                </div>
-              </div>
-            </footer>
+    <div className="min-h-screen bg-gray-50">
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl p-8 max-w-sm mx-4 text-center">
+            <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Processing Your Booking
+            </h3>
+            <p className="text-gray-600">
+              Please wait while we confirm your appointment...
+            </p>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && bookingDetails && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full mx-4 animate-[scale-in_0.3s_ease-out]">
+            <button
+              onClick={closeModal}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Check className="w-10 h-10 text-green-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Booking Confirmed!
+              </h3>
+              <p className="text-gray-600">
+                Your appointment has been successfully booked
+              </p>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-4 mb-6 space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Name:</span>
+                <span className="font-semibold text-gray-900">
+                  {bookingDetails.customerName}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Phone:</span>
+                <span className="font-semibold text-gray-900">
+                  {bookingDetails.customerPhone}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Service:</span>
+                <span className="font-semibold text-gray-900">
+                  {bookingDetails.service}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Duration:</span>
+                <span className="font-semibold text-gray-900">
+                  {bookingDetails.duration}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Date:</span>
+                <span className="font-semibold text-gray-900">
+                  {bookingDetails.appointmentDate}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Time:</span>
+                <span className="font-semibold text-gray-900">
+                  {bookingDetails.appointmentTime}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm border-t pt-3">
+                <span className="text-gray-600">Amount:</span>
+                <span className="font-bold text-cyan-600 text-lg">
+                  {formatPrice(bookingDetails.paymentAmount)}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-cyan-800 text-center">
+                📧 Confirmation has been sent to our team. We'll contact you
+                shortly with{" "}
+                {serviceType === "studio" ? "payment details" : "final details"}
+                .
+              </p>
+            </div>
+
+            <button
+              onClick={closeModal}
+              className="w-full py-3 bg-cyan-400 text-white rounded-lg font-semibold hover:bg-cyan-500 transition-colors"
+            >
+              Done
+            </button>
+
+            <div className="text-center mt-3">
+              <p className="text-xs text-gray-500">
+                This modal will close automatically in 5 seconds
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes scale-in {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+      `}</style>
+
+      <header className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-cyan-400 rounded-lg flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+                Vivify Massage & Spa
+              </h1>
+            </div>
+            <button
+              onClick={scrollToBooking}
+              className="bg-cyan-400 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-cyan-500 transition-colors font-semibold text-sm sm:text-base"
+            >
+              Book Now
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <section className="bg-gradient-to-br from-gray-100 to-gray-200 py-12 sm:py-20 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-64 sm:w-96 h-64 sm:h-96 bg-gray-300 rounded-full -translate-x-1/2 -translate-y-1/2 opacity-30"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <div className="inline-block bg-cyan-100 text-cyan-600 px-4 py-1 rounded-full text-xs sm:text-sm font-semibold mb-4 sm:mb-6">
+            PREMIUM RELAXATION
+          </div>
+          <h2 className="text-3xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-4">
+            Find Your
+            <br />
+            <span className="text-cyan-400">Perfect Balance</span>
+          </h2>
+          <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-4">
+            Experience world-class massage therapy in our downtown sanctuary or
+            the comfort of your own home. Book your personalized session today.
+          </p>
+        </div>
+      </section>
+
+      <section
+        id="booking-section"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16"
+      >
+        <div className="grid lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-8">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+                Customize Session
+              </h3>
+              <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">
+                Design your perfect relaxation experience in simple steps
+              </p>
+
+              <div className="mb-6 sm:mb-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-cyan-400 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm sm:text-base">
+                    1
+                  </div>
+                  <h4 className="text-base sm:text-lg font-bold text-gray-900">
+                    Select Location
+                  </h4>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div
+                    onClick={() => setServiceType("studio")}
+                    className={`p-4 sm:p-6 rounded-xl cursor-pointer transition-all border-2 ${
+                      serviceType === "studio"
+                        ? "border-cyan-400 bg-cyan-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h5 className="font-bold text-gray-900 mb-1 text-sm sm:text-base">
+                          Massage Studio
+                        </h5>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-2">
+                          <Building2 className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
+                          Our Private Home Studio
+                        </p>
+                        <p className="text-xs text-cyan-600 font-semibold">
+                          Elevated Rates
+                        </p>
+                      </div>
+                      {serviceType === "studio" && (
+                        <Check className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+                      )}
+                    </div>
+                  </div>
+                  <div
+                    onClick={() => setServiceType("mobile")}
+                    className={`p-4 sm:p-6 rounded-xl cursor-pointer transition-all border-2 ${
+                      serviceType === "mobile"
+                        ? "border-cyan-400 bg-cyan-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h5 className="font-bold text-gray-900 mb-1 text-sm sm:text-base">
+                          Mobile Service
+                        </h5>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-2">
+                          <Home className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
+                          Your Home or Hotel (Your Location)
+                        </p>
+                        <p className="text-xs text-cyan-600 font-semibold">
+                          Location Might Attract Extra Fee
+                        </p>
+                      </div>
+                      {serviceType === "mobile" && (
+                        <Check className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-6 sm:mb-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-200 text-gray-700 rounded-full flex items-center justify-center font-bold mr-3 text-sm sm:text-base">
+                    2
+                  </div>
+                  <h4 className="text-base sm:text-lg font-bold text-gray-900">
+                    Choose Therapy
+                  </h4>
+                </div>
+                <div className="space-y-3">
+                  {services.map((service) => (
+                    <div
+                      key={service.id}
+                      onClick={() => setSelectedService(service.id)}
+                      className={`p-3 sm:p-4 rounded-xl cursor-pointer transition-all border-2 flex items-start ${
+                        selectedService === service.id
+                          ? "border-cyan-400 bg-cyan-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <img
+                        src={service.image}
+                        alt={service.name}
+                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover mr-3 sm:mr-4 flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <h5 className="font-bold text-gray-900 text-sm sm:text-base">
+                            {service.name}
+                          </h5>
+                          <span
+                            className={`text-xs px-2 py-1 rounded ${
+                              service.badge === "Popular"
+                                ? "bg-green-100 text-green-700"
+                                : service.badge === "Standard"
+                                ? "bg-orange-100 text-orange-700"
+                                : "bg-purple-100 text-purple-700"
+                            }`}
+                          >
+                            {service.badge}
+                          </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                          {service.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-6 sm:mb-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-200 text-gray-700 rounded-full flex items-center justify-center font-bold mr-3 text-sm sm:text-base">
+                    3
+                  </div>
+                  <h4 className="text-base sm:text-lg font-bold text-gray-900">
+                    Therapist Preference
+                  </h4>
+                </div>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  {["any", "female", "male"].map((gender) => (
+                    <button
+                      key={gender}
+                      onClick={() => setTherapistGender(gender)}
+                      className={`p-3 sm:p-4 rounded-xl transition-all border-2 ${
+                        therapistGender === gender
+                          ? "border-cyan-400 bg-cyan-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <User className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-gray-600" />
+                      <p className="text-xs sm:text-sm font-semibold text-gray-900">
+                        {gender === "any"
+                          ? "No Preference"
+                          : gender === "female"
+                          ? "Female Therapist"
+                          : "Male Therapist"}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1 hidden sm:block">
+                        {gender === "any"
+                          ? "Earliest Available"
+                          : "Specific Request"}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-6 sm:mb-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-200 text-gray-700 rounded-full flex items-center justify-center font-bold mr-3 text-sm sm:text-base">
+                    4
+                  </div>
+                  <h4 className="text-base sm:text-lg font-bold text-gray-900">
+                    Session Duration
+                  </h4>
+                </div>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  {[60, 90, 120].map((mins) => (
+                    <div
+                      key={mins}
+                      onClick={() => setDuration(mins)}
+                      className={`p-3 sm:p-4 rounded-xl cursor-pointer transition-all border-2 text-center ${
+                        duration === mins
+                          ? "border-cyan-400 bg-cyan-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      {duration === mins && (
+                        <span className="text-xs bg-cyan-400 text-white px-2 py-1 rounded mb-2 inline-block">
+                          SELECTED
+                        </span>
+                      )}
+                      <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+                        {mins}
+                      </div>
+                      <div className="text-xs sm:text-sm text-gray-600 mb-1">
+                        MINUTES
+                      </div>
+                      <div className="text-xs sm:text-sm font-semibold text-cyan-600">
+                        {formatPrice(pricing[serviceType][mins])}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-6 sm:mb-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-200 text-gray-700 rounded-full flex items-center justify-center font-bold mr-3 text-sm sm:text-base">
+                    5
+                  </div>
+                  <h4 className="text-base sm:text-lg font-bold text-gray-900">
+                    Select Date
+                  </h4>
+                </div>
+                <div className="p-4 sm:p-6 rounded-xl border-2 border-cyan-400 bg-cyan-50">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Choose your appointment date
+                  </label>
+                  <input
+                    type="date"
+                    value={appointmentDate}
+                    onChange={(e) => setAppointmentDate(e.target.value)}
+                    min={getTodayDate()}
+                    max={getMaxDate()}
+                    className="w-full p-3 border-2 border-gray-200 rounded-lg text-center font-semibold text-sm sm:text-base focus:border-cyan-400 focus:outline-none"
+                  />
+                  <p className="text-xs text-gray-600 mt-2 text-center">
+                    Available up to 3 months in advance
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-6 sm:mb-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-200 text-gray-700 rounded-full flex items-center justify-center font-bold mr-3 text-sm sm:text-base">
+                    6
+                  </div>
+                  <h4 className="text-base sm:text-lg font-bold text-gray-900">
+                    Select Time
+                  </h4>
+                </div>
+                {serviceType === "mobile" ? (
+                  <div>
+                    <div className="p-4 sm:p-6 rounded-xl border-2 border-cyan-400 bg-cyan-50 text-center mb-4">
+                      <Clock className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-3 text-cyan-600" />
+                      <h5 className="font-bold text-gray-900 mb-1 text-sm sm:text-base">
+                        Extended Hours
+                      </h5>
+                      <p className="text-xs sm:text-sm text-gray-600">
+                        Mobile service available 7 AM - 12 AM
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                      {mobileTimeSlots.map((time) => (
+                        <button
+                          key={time}
+                          onClick={() => setAppointmentTime(time)}
+                          className={`p-2 sm:p-3 rounded-lg transition-all border-2 text-xs sm:text-sm font-semibold ${
+                            appointmentTime === time
+                              ? "border-cyan-400 bg-cyan-400 text-white"
+                              : "border-gray-200 hover:border-gray-300 text-gray-700"
+                          }`}
+                        >
+                          {time}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {studioTimeSlots.map((time) => (
+                      <button
+                        key={time}
+                        onClick={() => setAppointmentTime(time)}
+                        className={`p-2 sm:p-3 rounded-lg transition-all border-2 text-xs sm:text-sm font-semibold ${
+                          appointmentTime === time
+                            ? "border-cyan-400 bg-cyan-400 text-white"
+                            : "border-gray-200 hover:border-gray-300 text-gray-700"
+                        }`}
+                      >
+                        {time}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="mb-6 sm:mb-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-200 text-gray-700 rounded-full flex items-center justify-center font-bold mr-3 text-sm sm:text-base">
+                    7
+                  </div>
+                  <h4 className="text-base sm:text-lg font-bold text-gray-900">
+                    Your Information
+                  </h4>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Enter your full name"
+                      className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Phone Number *
+                    </label>
+                    <input
+                      type="tel"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="080XXXXXXXX"
+                      className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {serviceType === "studio" && (
+                <div>
+                  <div className="flex items-center mb-4">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-200 text-gray-700 rounded-full flex items-center justify-center font-bold mr-3 text-sm sm:text-base">
+                      8
+                    </div>
+                    <h4 className="text-base sm:text-lg font-bold text-gray-900">
+                      Payment Option
+                    </h4>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div
+                      onClick={() => setPaymentOption("full")}
+                      className={`p-4 rounded-xl cursor-pointer transition-all border-2 ${
+                        paymentOption === "full"
+                          ? "border-cyan-400 bg-cyan-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h5 className="font-bold text-gray-900 mb-1">
+                            Pay in Full
+                          </h5>
+                          <p className="text-xs text-gray-600 mb-2">
+                            Complete payment
+                          </p>
+                          <p className="text-lg font-bold text-cyan-600">
+                            {formatPrice(getCurrentPrice())}
+                          </p>
+                        </div>
+                        {paymentOption === "full" && (
+                          <Check className="w-5 h-5 text-cyan-400" />
+                        )}
+                      </div>
+                    </div>
+                    <div
+                      onClick={() => setPaymentOption("deposit")}
+                      className={`p-4 rounded-xl cursor-pointer transition-all border-2 ${
+                        paymentOption === "deposit"
+                          ? "border-cyan-400 bg-cyan-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h5 className="font-bold text-gray-900 mb-1">
+                            50% Deposit
+                          </h5>
+                          <p className="text-xs text-gray-600 mb-2">
+                            Pay remaining at studio
+                          </p>
+                          <p className="text-lg font-bold text-cyan-600">
+                            {formatPrice(getCurrentPrice() * 0.5)}
+                          </p>
+                        </div>
+                        {paymentOption === "deposit" && (
+                          <Check className="w-5 h-5 text-cyan-400" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs text-blue-800">
+                      💳 Payment required for studio bookings. We'll send you
+                      payment details via WhatsApp.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {serviceType === "mobile" && (
+                <div>
+                  <div className="flex items-center mb-4">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-200 text-gray-700 rounded-full flex items-center justify-center font-bold mr-3 text-sm sm:text-base">
+                      8
+                    </div>
+                    <h4 className="text-base sm:text-lg font-bold text-gray-900">
+                      Payment Method
+                    </h4>
+                  </div>
+                  <div className="p-4 rounded-xl border-2 border-green-400 bg-green-50">
+                    <h5 className="font-bold text-gray-900 mb-1">
+                      Pay After Session
+                    </h5>
+                    <p className="text-sm text-gray-600">
+                      Payment due upon completion of mobile service
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="lg:hidden mt-6 bg-white rounded-2xl shadow-sm p-4 sm:p-6">
+              <div className="flex items-center mb-4">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-cyan-400 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm sm:text-base">
+                  9
+                </div>
+                <h4 className="text-base sm:text-lg font-bold text-gray-900">
+                  Review & Confirm
+                </h4>
+              </div>
+              {isFormComplete ? (
+                <>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                    <p className="text-xs sm:text-sm text-green-700 font-semibold">
+                      ✓ FORM COMPLETED
+                    </p>
+                  </div>
+                  <div className="border-t pt-4 mb-4">
+                    <div className="space-y-2 mb-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">
+                          Session ({duration} min)
+                        </span>
+                        <span className="font-semibold">
+                          {formatPrice(getCurrentPrice())}
+                        </span>
+                      </div>
+                      {serviceType === "studio" &&
+                        paymentOption === "deposit" && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">
+                              Paying Now (50%)
+                            </span>
+                            <span className="font-semibold text-cyan-600">
+                              {formatPrice(getPaymentAmount())}
+                            </span>
+                          </div>
+                        )}
+                    </div>
+                    <div className="flex justify-between items-center pt-3 border-t">
+                      <span className="text-base sm:text-lg font-bold text-gray-900">
+                        {serviceType === "studio" && paymentOption === "deposit"
+                          ? "Pay Now"
+                          : "Total Due"}
+                      </span>
+                      <span className="text-2xl sm:text-3xl font-bold text-cyan-400">
+                        {formatPrice(getPaymentAmount())}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 text-right mt-1">
+                      *Tax included
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleBooking}
+                    className="w-full py-3 rounded-lg font-semibold transition-all bg-cyan-400 text-white hover:bg-cyan-500"
+                  >
+                    Confirm Booking →
+                  </button>
+                  <p className="text-xs text-gray-500 text-center mt-3">
+                    {serviceType === "studio"
+                      ? "Payment details will be sent via WhatsApp"
+                      : "Pay after session"}
+                  </p>
+                </>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-4 text-center">
+                  <p className="text-sm text-gray-600">
+                    Complete all sections above to review your booking
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="hidden lg:block lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-24">
+              <div className="flex items-center mb-6">
+                <div className="w-5 h-5 bg-cyan-400 rounded mr-2"></div>
+                <h4 className="font-bold text-gray-900">Booking Summary</h4>
+              </div>
+              <div className="space-y-4 mb-6">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">
+                    {selectedService
+                      ? services.find((s) => s.id === selectedService)?.name
+                      : "Select service"}
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {selectedService && duration
+                      ? formatPrice(getCurrentPrice())
+                      : "-"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">
+                    {serviceType === "studio"
+                      ? "Massage Studio"
+                      : "Mobile Service"}
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {formatPrice(0)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Duration</span>
+                  <span className="text-gray-500">
+                    {duration ? `${duration} minutes` : "-"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Therapist</span>
+                  <span className="text-gray-500">
+                    {therapistGender === "male"
+                      ? "Male"
+                      : therapistGender === "female"
+                      ? "Female"
+                      : therapistGender === "any"
+                      ? "Any"
+                      : "-"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Date</span>
+                  <span className="text-gray-500">
+                    {appointmentDate || "-"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Time</span>
+                  <span className="text-gray-500">
+                    {appointmentTime || "-"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Name</span>
+                  <span className="text-gray-500">{customerName || "-"}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Phone</span>
+                  <span className="text-gray-500">{customerPhone || "-"}</span>
+                </div>
+              </div>
+              <div className="border-t pt-4 mb-6">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-bold text-gray-900">
+                    {serviceType === "studio" && paymentOption === "deposit"
+                      ? "Pay Now (50%)"
+                      : "Total Amount"}
+                  </span>
+                  <span className="text-3xl font-bold text-cyan-400">
+                    {duration ? formatPrice(getPaymentAmount()) : "-"}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 text-right mt-1">
+                  *Includes all taxes & fees
+                </p>
+              </div>
+              <button
+                onClick={handleBooking}
+                disabled={!isFormComplete}
+                className={`w-full py-3 rounded-lg font-semibold transition-all ${
+                  isFormComplete
+                    ? "bg-cyan-400 text-white hover:bg-cyan-500"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
+              >
+                Confirm Booking →
+              </button>
+              <p className="text-xs text-gray-500 text-center mt-3">
+                {serviceType === "studio"
+                  ? "Payment details will be sent via WhatsApp"
+                  : "Pay after session"}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-12 sm:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center mb-8 sm:mb-12">
+            What Our Clients Say
+          </h3>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {[
+              {
+                name: "Kamaldeen T.",
+                text: "Absolutely the best massage I've had in the city. The studio is so calming and clean.",
+                rating: 5,
+              },
+              {
+                name: "Adeniyi O.",
+                text: "The mobile service was game changing. A professional massage at home feels pure luxury.",
+                rating: 5,
+              },
+              {
+                name: "Janet M.",
+                text: "Deep tissue work that actually fixed my back pain. Highly professional staff!",
+                rating: 5,
+              },
+            ].map((testimonial, idx) => (
+              <div key={idx} className="bg-gray-50 rounded-2xl p-6 text-center">
+                <div className="w-16 h-16 bg-gray-300 rounded-full mx-auto mb-4"></div>
+                <div className="flex justify-center mb-3">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <span key={i} className="text-yellow-400 text-lg">
+                      ★
+                    </span>
+                  ))}
+                </div>
+                <p className="text-sm sm:text-base text-gray-600 mb-4 italic">
+                  "{testimonial.text}"
+                </p>
+                <p className="font-semibold text-gray-900">
+                  - {testimonial.name}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <footer className="bg-gray-900 text-white py-8 sm:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-8">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-8 h-8 bg-cyan-400 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <h4 className="text-xl font-bold">Vivify Massage & Spa</h4>
+              </div>
+              <p className="text-gray-400">
+                Your sanctuary for relaxation and rejuvenation. Book online or
+                call us today.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-xl font-bold mb-4">Contact</h4>
+              <div className="space-y-3 text-gray-400">
+                <div className="flex items-start">
+                  <Phone className="w-5 h-5 mr-3 mt-1 text-cyan-400" />
+                  <div>
+                    <p className="font-semibold text-white">07040723894</p>
+                    <p className="text-sm">Available for bookings</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <MapPin className="w-5 h-5 mr-3 mt-1 text-cyan-400" />
+                  <p>
+                    Ewa Block Industry, Alao Farm
+                    <br />
+                    Tanke Akata
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h4 className="text-xl font-bold mb-4">Hours</h4>
+              <div className="space-y-2 text-gray-400">
+                <div className="flex justify-between">
+                  <span>Studio:</span>
+                  <span className="text-white font-semibold">
+                    9:00 AM - 6:00 PM
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Mobile:</span>
+                  <span className="text-white font-semibold">24/7</span>
+                </div>
+                <p className="text-sm mt-2">We're here whenever you need us</p>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 Vivify Massage & Spa. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
-}
+};
+
+export default VivifySpaWebsite;
