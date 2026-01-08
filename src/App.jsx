@@ -13,6 +13,8 @@ import {
 
 const VivifySpaWebsite = () => {
   const [emailJsReady, setEmailJsReady] = useState(false);
+  const [bookedSlots, setBookedSlots] = useState({});
+  const [loadingSlots, setLoadingSlots] = useState(true);
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -36,6 +38,40 @@ const VivifySpaWebsite = () => {
     };
   }, []);
 
+  // Load booked slots from storage
+  useEffect(() => {
+    loadBookedSlots();
+  }, []);
+
+  const loadBookedSlots = async () => {
+    setLoadingSlots(true);
+    try {
+      const result = await window.storage.list("booking:", true);
+      if (result && result.keys) {
+        const slots = {};
+        for (const key of result.keys) {
+          try {
+            const bookingData = await window.storage.get(key, true);
+            if (bookingData && bookingData.value) {
+              const booking = JSON.parse(bookingData.value);
+              const dateKey = `${booking.serviceType}-${booking.date}`;
+              if (!slots[dateKey]) {
+                slots[dateKey] = [];
+              }
+              slots[dateKey].push(booking.time);
+            }
+          } catch (error) {
+            console.error(`Error loading booking ${key}:`, error);
+          }
+        }
+        setBookedSlots(slots);
+      }
+    } catch (error) {
+      console.error("Error loading booked slots:", error);
+    }
+    setLoadingSlots(false);
+  };
+
   const [selectedService, setSelectedService] = useState("");
   const [serviceType, setServiceType] = useState("studio");
   const [therapistGender, setTherapistGender] = useState("");
@@ -52,9 +88,9 @@ const VivifySpaWebsite = () => {
   const services = [
     {
       id: "swedish",
-      name: "Swedish Relaxation",
+      name: "Swedish Massage",
       description:
-        "Gentle, flowing strokes to promote relaxation and improve circulation. Best for stress relief",
+        "Gentle, flowing strokes to promote deep relaxation, blood circulation and improve blood flow. Best for stress relief.",
       image:
         "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&h=300&fit=crop",
       badge: "Popular",
@@ -63,16 +99,16 @@ const VivifySpaWebsite = () => {
       id: "deep-tissue",
       name: "Deep Tissue Recovery",
       description:
-        "Targeted pressure to release chronic muscle tension. Ideal for inflammation and injury recovery",
+        "Use deep pressure to release chronic pain, muscle knots, muscle tension. Ideal for inflammation, and recovery from aches and pains.",
       image:
         "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=400&h=300&fit=crop",
       badge: "Standard",
     },
     {
       id: "full-body",
-      name: "Full Body Rejuvenation",
+      name: "Full Body Massage",
       description:
-        "A comprehensive head-to-toe treatment combining multiple techniques for total renewal",
+        "A comprehensive head-to-toe treatment combining multiple techniques, works on the major muscle groups of the body to promote relaxation, pain relief, and overall wellness.",
       image:
         "https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=400&h=300&fit=crop",
       badge: "Premium",
@@ -118,6 +154,19 @@ const VivifySpaWebsite = () => {
     "12:00 AM",
   ];
 
+  // Check if a time slot is booked
+  const isTimeSlotBooked = (time) => {
+    if (!appointmentDate) return false;
+    const dateKey = `${serviceType}-${appointmentDate}`;
+    return bookedSlots[dateKey]?.includes(time) || false;
+  };
+
+  // Get available time slots for the selected date and service type
+  const getAvailableTimeSlots = () => {
+    const slots = serviceType === "studio" ? studioTimeSlots : mobileTimeSlots;
+    return slots;
+  };
+
   const scrollToBooking = () => {
     const bookingSection = document.getElementById("booking-section");
     if (bookingSection) {
@@ -125,13 +174,11 @@ const VivifySpaWebsite = () => {
     }
   };
 
-  // Get today's date in YYYY-MM-DD format for min date
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split("T")[0];
   };
 
-  // Get max date (3 months from now)
   const getMaxDate = () => {
     const maxDate = new Date();
     maxDate.setMonth(maxDate.getMonth() + 3);
@@ -217,6 +264,37 @@ const VivifySpaWebsite = () => {
     }
   };
 
+  const saveBookingToStorage = async (bookingData) => {
+    try {
+      const bookingKey = `booking:${serviceType}-${appointmentDate}-${appointmentTime.replace(
+        /[:\s]/g,
+        ""
+      )}`;
+      const bookingRecord = {
+        serviceType: serviceType,
+        date: appointmentDate,
+        time: appointmentTime,
+        customerName: bookingData.customerName,
+        customerPhone: bookingData.customerPhone,
+        service: bookingData.service,
+        timestamp: Date.now(),
+      };
+
+      await window.storage.set(bookingKey, JSON.stringify(bookingRecord), true);
+
+      // Update local state
+      const dateKey = `${serviceType}-${appointmentDate}`;
+      setBookedSlots((prev) => ({
+        ...prev,
+        [dateKey]: [...(prev[dateKey] || []), appointmentTime],
+      }));
+
+      console.log("✅ Booking saved to storage");
+    } catch (error) {
+      console.error("❌ Error saving booking:", error);
+    }
+  };
+
   const handleBooking = async () => {
     if (
       !selectedService ||
@@ -228,6 +306,14 @@ const VivifySpaWebsite = () => {
       !customerName ||
       !customerPhone
     ) {
+      return;
+    }
+
+    // Check if time slot is already booked
+    if (isTimeSlotBooked(appointmentTime)) {
+      alert(
+        "This time slot is no longer available. Please select another time."
+      );
       return;
     }
 
@@ -259,8 +345,10 @@ const VivifySpaWebsite = () => {
       bookingDate: new Date().toISOString(),
     };
 
-    // Simulate processing time
     await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    // Save booking to storage
+    await saveBookingToStorage(bookingData);
 
     if (serviceType === "studio") {
       setIsLoading(false);
@@ -274,7 +362,6 @@ const VivifySpaWebsite = () => {
     setIsLoading(false);
     setShowSuccessModal(true);
 
-    // Auto-close modal after 5 seconds
     setTimeout(() => {
       setShowSuccessModal(false);
       resetForm();
@@ -356,7 +443,6 @@ const VivifySpaWebsite = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Loading Overlay */}
       {isLoading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-2xl p-8 max-w-sm mx-4 text-center">
@@ -371,7 +457,6 @@ const VivifySpaWebsite = () => {
         </div>
       )}
 
-      {/* Success Modal */}
       {showSuccessModal && bookingDetails && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full mx-4 animate-[scale-in_0.3s_ease-out]">
@@ -502,7 +587,7 @@ const VivifySpaWebsite = () => {
         <div className="absolute top-0 left-0 w-64 sm:w-96 h-64 sm:h-96 bg-gray-300 rounded-full -translate-x-1/2 -translate-y-1/2 opacity-30"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <div className="inline-block bg-cyan-100 text-cyan-600 px-4 py-1 rounded-full text-xs sm:text-sm font-semibold mb-4 sm:mb-6">
-            PREMIUM RELAXATION
+            PLACE OF RELAXATION
           </div>
           <h2 className="text-3xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-4">
             Find Your
@@ -510,8 +595,8 @@ const VivifySpaWebsite = () => {
             <span className="text-cyan-400">Perfect Balance</span>
           </h2>
           <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-4">
-            Experience world-class massage therapy in our downtown sanctuary or
-            the comfort of your own home. Book your personalized session today.
+            Long days, sore muscles, built-up stress? Enjoy a professional
+            massage at our studio or your home.
           </p>
         </div>
       </section>
@@ -541,7 +626,10 @@ const VivifySpaWebsite = () => {
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                   <div
-                    onClick={() => setServiceType("studio")}
+                    onClick={() => {
+                      setServiceType("studio");
+                      setAppointmentTime("");
+                    }}
                     className={`p-4 sm:p-6 rounded-xl cursor-pointer transition-all border-2 ${
                       serviceType === "studio"
                         ? "border-cyan-400 bg-cyan-50"
@@ -567,7 +655,10 @@ const VivifySpaWebsite = () => {
                     </div>
                   </div>
                   <div
-                    onClick={() => setServiceType("mobile")}
+                    onClick={() => {
+                      setServiceType("mobile");
+                      setAppointmentTime("");
+                    }}
                     className={`p-4 sm:p-6 rounded-xl cursor-pointer transition-all border-2 ${
                       serviceType === "mobile"
                         ? "border-cyan-400 bg-cyan-50"
@@ -739,7 +830,10 @@ const VivifySpaWebsite = () => {
                   <input
                     type="date"
                     value={appointmentDate}
-                    onChange={(e) => setAppointmentDate(e.target.value)}
+                    onChange={(e) => {
+                      setAppointmentDate(e.target.value);
+                      setAppointmentTime("");
+                    }}
                     min={getTodayDate()}
                     max={getMaxDate()}
                     className="w-full p-3 border-2 border-gray-200 rounded-lg text-center font-semibold text-sm sm:text-base focus:border-cyan-400 focus:outline-none"
@@ -759,7 +853,14 @@ const VivifySpaWebsite = () => {
                     Select Time
                   </h4>
                 </div>
-                {serviceType === "mobile" ? (
+                {loadingSlots ? (
+                  <div className="text-center py-8">
+                    <div className="w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-600">
+                      Loading available times...
+                    </p>
+                  </div>
+                ) : serviceType === "mobile" ? (
                   <div>
                     <div className="p-4 sm:p-6 rounded-xl border-2 border-cyan-400 bg-cyan-50 text-center mb-4">
                       <Clock className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-3 text-cyan-600" />
@@ -771,36 +872,70 @@ const VivifySpaWebsite = () => {
                       </p>
                     </div>
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                      {mobileTimeSlots.map((time) => (
-                        <button
-                          key={time}
-                          onClick={() => setAppointmentTime(time)}
-                          className={`p-2 sm:p-3 rounded-lg transition-all border-2 text-xs sm:text-sm font-semibold ${
-                            appointmentTime === time
-                              ? "border-cyan-400 bg-cyan-400 text-white"
-                              : "border-gray-200 hover:border-gray-300 text-gray-700"
-                          }`}
-                        >
-                          {time}
-                        </button>
-                      ))}
+                      {mobileTimeSlots.map((time) => {
+                        const isBooked = isTimeSlotBooked(time);
+                        return (
+                          <button
+                            key={time}
+                            onClick={() =>
+                              !isBooked && setAppointmentTime(time)
+                            }
+                            disabled={isBooked}
+                            className={`p-2 sm:p-3 rounded-lg transition-all border-2 text-xs sm:text-sm font-semibold relative ${
+                              isBooked
+                                ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                                : appointmentTime === time
+                                ? "border-cyan-400 bg-cyan-400 text-white"
+                                : "border-gray-200 hover:border-gray-300 text-gray-700"
+                            }`}
+                          >
+                            {time}
+                            {isBooked && (
+                              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
+                    {appointmentDate && (
+                      <p className="text-xs text-gray-600 mt-3 text-center">
+                        🔴 = Booked • Available slots shown in white
+                      </p>
+                    )}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {studioTimeSlots.map((time) => (
-                      <button
-                        key={time}
-                        onClick={() => setAppointmentTime(time)}
-                        className={`p-2 sm:p-3 rounded-lg transition-all border-2 text-xs sm:text-sm font-semibold ${
-                          appointmentTime === time
-                            ? "border-cyan-400 bg-cyan-400 text-white"
-                            : "border-gray-200 hover:border-gray-300 text-gray-700"
-                        }`}
-                      >
-                        {time}
-                      </button>
-                    ))}
+                  <div>
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                      {studioTimeSlots.map((time) => {
+                        const isBooked = isTimeSlotBooked(time);
+                        return (
+                          <button
+                            key={time}
+                            onClick={() =>
+                              !isBooked && setAppointmentTime(time)
+                            }
+                            disabled={isBooked}
+                            className={`p-2 sm:p-3 rounded-lg transition-all border-2 text-xs sm:text-sm font-semibold relative ${
+                              isBooked
+                                ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                                : appointmentTime === time
+                                ? "border-cyan-400 bg-cyan-400 text-white"
+                                : "border-gray-200 hover:border-gray-300 text-gray-700"
+                            }`}
+                          >
+                            {time}
+                            {isBooked && (
+                              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {appointmentDate && (
+                      <p className="text-xs text-gray-600 mt-3 text-center">
+                        🔴 = Booked • Available slots shown in white
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -907,7 +1042,7 @@ const VivifySpaWebsite = () => {
                   <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-xs text-blue-800">
                       💳 Payment required for studio bookings. We'll send you
-                      payment details via WhatsApp.
+                      payment details via Contact.
                     </p>
                   </div>
                 </div>
@@ -1105,7 +1240,7 @@ const VivifySpaWebsite = () => {
               </button>
               <p className="text-xs text-gray-500 text-center mt-3">
                 {serviceType === "studio"
-                  ? "Payment details will be sent via WhatsApp"
+                  ? "Payment details will be sent via Contact"
                   : "Pay after session"}
               </p>
             </div>
@@ -1210,7 +1345,7 @@ const VivifySpaWebsite = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Vivify Massage & Spa. All rights reserved.</p>
+            <p>&copy; 2026 Vivify Massage & Spa. All rights reserved.</p>
           </div>
         </div>
       </footer>
