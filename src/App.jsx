@@ -1442,7 +1442,7 @@ const VivifySpaWebsite = () => {
                     <p className="text-sm">
                       Ewa Block Industry, Alao Farm
                       <br />
-                      Tanke Akata
+                      Tanke Akata.
                     </p>
                   </div>
                 </div>
