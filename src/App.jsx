@@ -1372,17 +1372,17 @@ const VivifySpaWebsite = () => {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {[
               {
-                name: "Sarah J.",
+                name: "Abu M.",
                 text: "Absolutely the best massage I've had in the city. The studio is so calming and clean.",
                 rating: 5,
               },
               {
-                name: "Michael T.",
+                name: "Adeola O.",
                 text: "The mobile service was game changing. A professional massage at home feels pure luxury.",
                 rating: 5,
               },
               {
-                name: "Emily R.",
+                name: "Kareem J.",
                 text: "Deep tissue work that actually fixed my back pain. Highly professional staff!",
                 rating: 5,
               },
