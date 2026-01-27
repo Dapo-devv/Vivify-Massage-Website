@@ -9,7 +9,6 @@ import {
   User,
   Check,
   X,
-  Star,
 } from "lucide-react";
 
 const VivifySpaWebsite = () => {
@@ -238,7 +237,7 @@ const VivifySpaWebsite = () => {
 
     const whatsappNumber = "2347040723894";
     const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-      message
+      message,
     )}`;
     window.open(whatsappLink, "_blank");
   };
@@ -272,7 +271,7 @@ const VivifySpaWebsite = () => {
           payment_status: bookingData.paymentStatus || "Paid",
           payment_reference: bookingData.paymentReference || "N/A",
           booking_date: new Date(bookingData.bookingDate).toLocaleString(),
-        }
+        },
       );
 
       console.log("✅ Email sent successfully!", response);
@@ -350,7 +349,7 @@ const VivifySpaWebsite = () => {
       onClose: function () {
         console.log("Payment window closed");
         alert(
-          "Payment was cancelled. You can try again or contact support at 07040723894."
+          "Payment was cancelled. You can try again or contact support at 07040723894.",
         );
       },
     });
@@ -385,8 +384,8 @@ const VivifySpaWebsite = () => {
         therapistGender === "any"
           ? "No Preference"
           : therapistGender === "male"
-          ? "Male"
-          : "Female",
+            ? "Male"
+            : "Female",
       duration: `${duration} minutes`,
       appointmentDate,
       appointmentTime,
@@ -724,16 +723,16 @@ const VivifySpaWebsite = () => {
         <div className="absolute top-0 left-0 w-64 sm:w-96 h-64 sm:h-96 bg-gray-300 rounded-full -translate-x-1/2 -translate-y-1/2 opacity-30"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <div className="inline-block bg-cyan-100 text-cyan-600 px-4 py-1 rounded-full text-xs sm:text-sm font-semibold mb-4 sm:mb-6">
-            PREMIUM RELAXATION EXPERIENCE
+            Where Recovery Meets Convenience
           </div>
           <h2 className="text-3xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-4">
-            Find Your
+            Relax. Restore. Renew.
             <br />
-            <span className="text-cyan-400">Perfect Balance</span>
+            <span className="text-cyan-400">Expert Massage Therapy</span>
           </h2>
           <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-4 mb-6">
-            Experience world-class massage therapy in our downtown sanctuary or
-            the comfort of your own home. Book your personalized session today.
+            Sports recovery, deep tissue, chronic pain relief. Real results, not
+            just relaxation.
           </p>
         </div>
       </section>
@@ -859,8 +858,8 @@ const VivifySpaWebsite = () => {
                               service.badge === "Popular"
                                 ? "bg-green-100 text-green-700"
                                 : service.badge === "Standard"
-                                ? "bg-orange-100 text-orange-700"
-                                : "bg-purple-100 text-purple-700"
+                                  ? "bg-orange-100 text-orange-700"
+                                  : "bg-purple-100 text-purple-700"
                             }`}
                           >
                             {service.badge}
@@ -900,8 +899,8 @@ const VivifySpaWebsite = () => {
                         {gender === "any"
                           ? "No Preference"
                           : gender === "female"
-                          ? "Female Therapist"
-                          : "Male Therapist"}
+                            ? "Female Therapist"
+                            : "Male Therapist"}
                       </p>
                       <p className="text-xs text-gray-500 mt-1 hidden sm:block">
                         {gender === "any"
@@ -1207,8 +1206,8 @@ const VivifySpaWebsite = () => {
                         {serviceType === "studio" && paymentOption === "deposit"
                           ? "Pay Now"
                           : serviceType === "studio"
-                          ? "Pay Now"
-                          : "Total Due"}
+                            ? "Pay Now"
+                            : "Total Due"}
                       </span>
                       <span className="text-2xl sm:text-3xl font-bold text-cyan-400">
                         {formatPrice(getPaymentAmount())}
@@ -1285,10 +1284,10 @@ const VivifySpaWebsite = () => {
                     {therapistGender === "male"
                       ? "Male"
                       : therapistGender === "female"
-                      ? "Female"
-                      : therapistGender === "any"
-                      ? "Any"
-                      : "-"}
+                        ? "Female"
+                        : therapistGender === "any"
+                          ? "Any"
+                          : "-"}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -1318,8 +1317,8 @@ const VivifySpaWebsite = () => {
                     {serviceType === "studio" && paymentOption === "deposit"
                       ? "Pay Now (50%)"
                       : serviceType === "studio"
-                      ? "Pay Now"
-                      : "Total Amount"}
+                        ? "Pay Now"
+                        : "Total Amount"}
                   </span>
                   <span className="text-3xl font-bold text-cyan-400">
                     {duration ? formatPrice(getPaymentAmount()) : "-"}
@@ -1373,17 +1372,17 @@ const VivifySpaWebsite = () => {
             {[
               {
                 name: "Abu M.",
-                text: "Absolutely the best massage I've had in the city. The studio is so calming and clean.",
+                text: "Had chronic shoulder pain for 6 months. After 3 sessions with Vivify, I'm back to training pain-free.",
                 rating: 5,
               },
               {
                 name: "Adeola O.",
-                text: "The mobile service was game changing. A professional massage at home feels pure luxury.",
+                text: "Having a professional massage therapist come to my home was incredible. No rushing through traffic, just pure relaxation in my own space. Absolutely worth it.",
                 rating: 5,
               },
               {
                 name: "Kareem J.",
-                text: "Deep tissue work that actually fixed my back pain. Highly professional staff!",
+                text: "Deep tissue massage that delivered real results. My back pain is significantly better, and the staff was incredibly professional throughout.",
                 rating: 5,
               },
             ].map((testimonial, idx) => (
