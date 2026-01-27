@@ -1465,7 +1465,7 @@ const VivifySpaWebsite = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Vivify Massage & Spa. All rights reserved.</p>
+            <p>&copy; 2026 Vivify Massage & Spa. All rights reserved.</p>
             <p className="text-sm mt-2">Payment processing by Paystack</p>
           </div>
         </div>
