@@ -116,22 +116,23 @@ const MOBILE_SLOTS = [
   "12:00 AM",
 ];
 
+// ── UPDATED MEMBERSHIP PLANS ──
 const MEM_PLANS = [
   {
-    id: "duo",
-    label: "Duo Renewal",
+    id: "relaxation",
+    label: "Relaxation Duo",
     sessions: 2,
-    desc: "Two sessions per month — same or mix different services. Ideal for consistent maintenance.",
+    desc: "Two soothing sessions per month – choose from Swedish, Deep Tissue, or Full Body. Ideal for regular stress relief and rejuvenation.",
     icon: "🌿",
-    tag: "Popular",
+    tag: "Self‑Care",
   },
   {
-    id: "quad",
-    label: "Quad Transformation",
-    sessions: 4,
-    desc: "Four sessions per month for serious recovery, performance, and total body transformation.",
+    id: "pro-athlete",
+    label: "Pro / Athlete Recovery",
+    sessions: 2,
+    desc: "Two targeted recovery sessions per month – Sports or Deep Tissue for busy professionals and athletes. Keep your body performing at its peak.",
     icon: "⚡",
-    tag: "Best Value",
+    tag: "Performance",
   },
 ];
 
@@ -177,7 +178,7 @@ const VivifySpaWebsite = () => {
   const [mSvcType, setMSvcType] = useState("studio");
   const [mSvc, setMSvc] = useState("");
   const [mDur, setMDur] = useState("");
-  const [mPlan, setMPlan] = useState("duo");
+  const [mPlan, setMPlan] = useState("relaxation"); // default to new plan
   const [mName, setMName] = useState("");
   const [mPhone, setMPhone] = useState("");
   const [mEmail, setMEmail] = useState("");
@@ -654,7 +655,6 @@ const VivifySpaWebsite = () => {
               <Btn color="blue" onClick={() => doRedirect(bDetails)}>
                 Go to Confirmation →
               </Btn>
-              {/* ── WhatsApp button (same tab) ── */}
               <Btn
                 color="whatsapp"
                 onClick={() =>
@@ -685,7 +685,6 @@ const VivifySpaWebsite = () => {
                   session.
                 </span>
               </div>
-              {/* ── WhatsApp button (same tab) ── */}
               <Btn
                 color="whatsapp"
                 onClick={() =>
@@ -760,7 +759,6 @@ const VivifySpaWebsite = () => {
               calendar.
             </span>
           </div>
-          {/* ── WhatsApp button (same tab) ── */}
           <Btn
             color="whatsapp"
             onClick={() =>
@@ -823,7 +821,6 @@ const VivifySpaWebsite = () => {
             Confirmation sent to {gDetails.buyerEmail}
             {gDetails.recipientEmail ? ` and ${gDetails.recipientEmail}` : ""}
           </p>
-          {/* Gift card visual */}
           <div
             className="rounded-2xl p-5 mb-4 text-white relative overflow-hidden"
             style={{ background: "linear-gradient(135deg,#0c4a6e,#0e7490)" }}
@@ -898,7 +895,6 @@ const VivifySpaWebsite = () => {
               {gDetails.recipientName} with their gift.
             </span>
           </div>
-          {/* ── WhatsApp button (same tab) ── */}
           <Btn
             color="whatsapp"
             onClick={() =>
@@ -991,7 +987,6 @@ const VivifySpaWebsite = () => {
             Book Now
           </button>
         </div>
-        {/* Mobile tabs */}
         <div
           className="md:hidden flex"
           style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}
@@ -1093,7 +1088,6 @@ const VivifySpaWebsite = () => {
         {/* ════════════ BOOKING ════════════ */}
         {activeTab === "booking" && (
           <div>
-            {/* Progress */}
             <div
               className="mb-5 rounded-2xl p-4 sm:p-5"
               style={{ background: "rgba(255,255,255,0.95)" }}
@@ -1551,8 +1545,8 @@ const VivifySpaWebsite = () => {
                 Commit to Your Wellbeing
               </h2>
               <p className="text-cyan-200 text-sm max-w-md mx-auto">
-                Choose a multi-session monthly plan with 10% off every session.
-                Real commitment, real results.
+                Choose a monthly plan with 10% off every session. Real
+                commitment, real results.
               </p>
             </div>
 
@@ -1866,7 +1860,6 @@ const VivifySpaWebsite = () => {
               </p>
             </div>
 
-            {/* Live preview */}
             <div
               className="rounded-2xl p-5 sm:p-6 mb-6 text-white relative overflow-hidden"
               style={{
@@ -2645,7 +2638,7 @@ const BSummary = ({
           </p>
         )}
         <p className="text-xs text-right mt-0.5 text-gray-400">
-          *All taxes included🧾
+          *All taxes included
         </p>
       </div>
       <button
