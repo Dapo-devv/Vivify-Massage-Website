@@ -17,7 +17,6 @@ export const PRICING = {
   },
 };
 
-// Flat service list — no categories. Order is the display order.
 export const SERVICES = [
   {
     id: "swedish",
@@ -52,8 +51,6 @@ export const SERVICES = [
   },
 ];
 
-// Sports Massage is intentionally EXCLUDED — it lives in its own tab.
-
 export const ADDONS = [
   {
     id: "scalp",
@@ -73,8 +70,6 @@ export const ADDONS = [
   },
 ];
 
-// All massages open to male or female therapists.
-// Sports Massage is male-only — that's enforced inside SportsMassage.jsx.
 export const THERAPISTS = [
   {
     id: "any",
@@ -179,14 +174,6 @@ export const SPORTS_TECHNIQUES = [
 
 export const SPORTS_DURATIONS = [60, 90];
 
-export const SPORTS_PHASES = [
-  "Pre-Event",
-  "Post-Event",
-  "In-Season Recovery",
-  "Off-Season Maintenance",
-  "Injury Rehab",
-];
-
 export const SPORTS_FOCUS = [
   "Neck & Shoulders",
   "Lower Back",
@@ -212,28 +199,3 @@ export const maxStr = () => {
   d.setMonth(d.getMonth() + 3);
   return d.toISOString().split("T")[0];
 };
-
-// Cart helpers
-export const cartSubtotal = (items) =>
-  items.reduce(
-    (sum, it) =>
-      sum +
-      getPrice(it.svcType, it.service, it.duration) +
-      (it.addons || []).reduce(
-        (a, id) => a + (ADDONS.find((x) => x.id === id)?.price || 0),
-        0,
-      ),
-    0,
-  );
-
-export const cartMinutes = (items) =>
-  items.reduce(
-    (sum, it) =>
-      sum +
-      Number(it.duration) +
-      (it.addons || []).reduce(
-        (a, id) => a + (ADDONS.find((x) => x.id === id)?.minutes || 0),
-        0,
-      ),
-    0,
-  );

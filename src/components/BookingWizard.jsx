@@ -3,10 +3,14 @@ import {
   Home,
   Building2,
   User,
-  Plus,
+  Check,
   Sparkles,
-  ShoppingBag,
-  CheckCircle2,
+  ArrowRight,
+  ArrowLeft,
+  ShieldCheck,
+  Wallet,
+  Calendar as CalendarIcon,
+  Clock as ClockIcon,
 } from "lucide-react";
 import {
   SERVICES,
@@ -16,24 +20,19 @@ import {
   fmt,
   getPrice,
   durList,
-  cartSubtotal,
-  cartMinutes,
 } from "../config/services";
-import { TF, PF, SC, Tick, IB, Btn, Modal, SuccessIcon } from "./ui";
-import CartSidebar from "./CartSidebar";
 import DateStrip from "./DateStrip";
 import SlotGrid from "./SlotGrid";
 import { useAvailability } from "../hooks/useAvailability";
 
-const STEPS = ["Service", "Add-ons", "Therapist", "Date & Time", "Details"];
+const STEPS = ["Service", "Add-ons", "Therapist", "Date", "Confirm"];
 const WA_NUMBER = "2347040723894";
 const PAYSTACK_KEY = "pk_live_915663b76742c16f999c99e6251596ee7c5c9584";
 
 export default function BookingWizard() {
   const [step, setStep] = useState(0);
-  const [slideDir, setSlideDir] = useState("fwd");
 
-  // ── Draft ──
+  // ── Booking draft (single service) ──
   const [svcType, setSvcType] = useState("studio");
   const [service, setService] = useState("");
   const [duration, setDuration] = useState("");
@@ -41,9 +40,6 @@ export default function BookingWizard() {
   const [therapist, setTherapist] = useState("any");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
-
-  // ── Cart ──
-  const [items, setItems] = useState([]);
 
   // ── Customer ──
   const [name, setName] = useState("");
@@ -53,13 +49,11 @@ export default function BookingWizard() {
   const [payOpt, setPayOpt] = useState("full");
 
   // ── UI ──
-  const [cartOpen, setCartOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [booking, setBooking] = useState(null);
-  const [toast, setToast] = useState(null);
 
-  const draftDuration = useMemo(() => {
+  const totalDuration = useMemo(() => {
     if (!duration) return 0;
     return (
       Number(duration) +
@@ -70,111 +64,62 @@ export default function BookingWizard() {
     );
   }, [duration, addons]);
 
+  const basePrice = service ? getPrice(svcType, service, duration) : 0;
+  const addonsTotal = addons.reduce(
+    (a, id) => a + (ADDONS.find((x) => x.id === id)?.price || 0),
+    0,
+  );
+  const total = basePrice + addonsTotal;
+
   const { available, loading: slotsLoading } = useAvailability({
     date,
     serviceType: svcType,
-    minutes: draftDuration || 60,
+    minutes: totalDuration || 60,
   });
 
-  const subtotal = cartSubtotal(items);
-
   // ── Validation ──
-  const step0Valid = !!(svcType && service && duration);
-  const step1Valid = true;
-  const step2Valid = !!therapist;
-  const step3Valid = !!(date && time);
   const customerValid = !!(
     name &&
     phone.replace(/\D/g, "").length >= 11 &&
     email
   );
-  const step4Valid = step0Valid && step2Valid && step3Valid && customerValid;
-  const stepValids = [
-    step0Valid,
-    step1Valid,
-    step2Valid,
-    step3Valid,
-    step4Valid,
+  const stepValid = [
+    !!(svcType && service && duration),
+    true, // add-ons optional
+    !!therapist,
+    !!(date && time),
+    customerValid,
   ];
 
-  const canPay = items.length > 0 && customerValid;
+  const next = () => setStep((s) => Math.min(s + 1, 4));
+  const back = () => setStep((s) => Math.max(s - 1, 0));
 
-  const goNext = () => {
-    setSlideDir("fwd");
-    setStep((s) => Math.min(s + 1, 4));
-  };
-  const goBack = () => {
-    setSlideDir("bck");
-    setStep((s) => Math.max(s - 1, 0));
-  };
-
+  // Auto-fix duration when service changes
   useEffect(() => {
     if (!service) return;
     const opts = durList(service);
     if (!opts.includes(Number(duration))) setDuration(opts[0]);
   }, [service, duration]);
 
+  // Reset time when key inputs change
   useEffect(() => {
     setTime("");
-  }, [date, svcType, draftDuration]);
+  }, [date, svcType, totalDuration]);
 
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 2500);
-    return () => clearTimeout(t);
-  }, [toast]);
-
-  const resetDraft = () => {
-    setService("");
-    setDuration("");
-    setAddons([]);
-    setTherapist("any");
-    setDate("");
-    setTime("");
-  };
-
-  const addToSession = () => {
-    if (!step4Valid) return;
-
-    if (items.length > 0 && items[0].svcType !== svcType) {
-      alert(
-        `Your session is currently for ${
-          items[0].svcType === "studio" ? "Home Studio" : "Mobile Service"
-        }. ` +
-          `Please complete this booking first, or remove the existing items to switch.`,
-      );
-      return;
-    }
-
-    const svcObj = SERVICES.find((s) => s.id === service);
-    const item = {
-      svcType,
-      service,
-      serviceName: svcObj?.name,
-      duration,
-      addons: [...addons],
-      therapist,
-      date,
-      time,
-    };
-
-    setItems((prev) => [...prev, item]);
-    resetDraft();
-    setSlideDir("bck");
-    setStep(0);
-    setToast({
-      type: "success",
-      msg: `${svcObj?.name} · ${duration} min added to your session`,
-    });
-  };
-
-  const removeItem = (i) => setItems(items.filter((_, idx) => idx !== i));
-
-  const handlePay = async () => {
-    if (!canPay) return;
+  // ── Submit ──
+  const submitBooking = async () => {
+    if (!customerValid) return;
     setLoading(true);
     try {
-      const first = items[0];
+      const svcObj = SERVICES.find((s) => s.id === service);
+
+      // Mobile → no upfront payment
+      if (svcType === "mobile") {
+        await finalizeBooking("PAY-AFTER", svcObj);
+        return;
+      }
+
+      // Studio → Paystack
       const res = await fetch("/api/book", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -182,53 +127,22 @@ export default function BookingWizard() {
           customerName: name,
           customerPhone: phone,
           email,
-          serviceType: first.svcType,
-          date: first.date,
-          time: first.time,
-          items,
-          subtotal,
-          duration: cartMinutes(items),
-          paymentType:
-            first.svcType === "studio"
-              ? payOpt === "full"
-                ? "Full"
-                : "Deposit"
-              : "Pay After Session",
-          paymentAmount:
-            first.svcType === "studio"
-              ? payOpt === "full"
-                ? subtotal
-                : Math.round(subtotal * 0.5)
-              : subtotal,
+          serviceType: svcType,
+          date,
+          time,
+          service: svcObj?.name,
+          duration,
+          addons: addons.map(
+            (id) => ADDONS.find((x) => x.id === id)?.name || id,
+          ),
+          therapist,
+          subtotal: total,
+          totalAmount: total,
+          paymentAmount: payOpt === "full" ? total : Math.round(total * 0.5),
+          paymentType: payOpt === "full" ? "Full" : "Deposit",
         }),
       });
       const { ref } = await res.json();
-
-      const finalize = async (paymentRef = "—") => {
-        await fetch("/api/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "booking_multi",
-            data: {
-              ref,
-              customerName: name,
-              customerPhone: phone,
-              email,
-              items,
-              subtotal,
-              paymentRef,
-              paymentType: payOpt,
-            },
-          }),
-        });
-        setBooking({ ref, customerName: name, items, subtotal, paymentRef });
-        setLoading(false);
-        setSuccess(true);
-      };
-
-      // Mobile → no upfront payment
-      if (first.svcType === "mobile") return finalize("PAY-AFTER");
 
       if (!window.PaystackPop) {
         setLoading(false);
@@ -237,7 +151,7 @@ export default function BookingWizard() {
         );
       }
 
-      const amount = payOpt === "full" ? subtotal : Math.round(subtotal * 0.5);
+      const amount = payOpt === "full" ? total : Math.round(total * 0.5);
       window.PaystackPop.setup({
         key: PAYSTACK_KEY,
         email: email || "customer@vivifymassageandspa.online",
@@ -253,10 +167,12 @@ export default function BookingWizard() {
             },
           ],
         },
-        callback: (r) => finalize(r.reference),
+        callback: async (r) => {
+          await finalizeBooking(r.reference, svcObj, ref);
+        },
         onClose: () => {
           setLoading(false);
-          alert("Payment cancelled. You can retry from the cart.");
+          alert("Payment cancelled. You can try again.");
         },
       }).openIframe();
     } catch (e) {
@@ -266,925 +182,877 @@ export default function BookingWizard() {
     }
   };
 
+  const finalizeBooking = async (
+    paymentRef = "PAY-AFTER",
+    svcObj,
+    existingRef,
+  ) => {
+    const ref =
+      existingRef ||
+      `VMS-${new Date()
+        .toISOString()
+        .slice(0, 10)
+        .replace(/-/g, "")}-${Math.random()
+        .toString(36)
+        .slice(2, 7)
+        .toUpperCase()}`;
+
+    try {
+      await fetch("/api/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "booking_multi",
+          data: {
+            ref,
+            customerName: name,
+            customerPhone: phone,
+            email,
+            items: [
+              {
+                serviceName: svcObj?.name,
+                service,
+                svcType,
+                duration,
+                addons: addons.map(
+                  (id) => ADDONS.find((x) => x.id === id)?.name || id,
+                ),
+                therapist,
+                date,
+                time,
+              },
+            ],
+            subtotal: total,
+            paymentRef,
+            paymentType:
+              svcType === "mobile"
+                ? "Pay After Session"
+                : payOpt === "full"
+                  ? "Full"
+                  : "Deposit",
+          },
+        }),
+      });
+    } catch (err) {
+      console.error("Email failed:", err);
+    }
+
+    setBooking({
+      ref,
+      customerName: name,
+      serviceName: svcObj?.name,
+      duration,
+      total,
+      svcType,
+    });
+    setLoading(false);
+    setSuccess(true);
+  };
+
+  const reset = () => {
+    setSuccess(false);
+    setBooking(null);
+    setStep(0);
+    setService("");
+    setDuration("");
+    setAddons([]);
+    setTherapist("any");
+    setDate("");
+    setTime("");
+    setName("");
+    setPhone("");
+    setEmail("");
+    setPhoneErr("");
+    setPayOpt("full");
+  };
+
   const sendWA = () => {
     if (!booking) return;
-    const lines = booking.items
-      .map(
-        (it, i) =>
-          `${i + 1}. ${it.serviceName} (${it.duration} min${
-            it.addons?.length ? " + " + it.addons.length + " add-on(s)" : ""
-          })`,
-      )
-      .join("\n");
     const msg =
-      `Hello Vivify Massage & Spa! 🌟\n\n` +
-      `Booking Ref: ${booking.ref}\n` +
-      `👤 ${booking.customerName}\n\n` +
-      `${lines}\n\n` +
-      `💰 Subtotal: ${fmt(booking.subtotal)}\n\n` +
+      `Hello Vivify! 🌟\n\nRef: ${booking.ref}\n` +
+      `👤 ${booking.customerName}\n` +
+      `💆 ${booking.serviceName} (${booking.duration} min)\n` +
+      `💰 ${fmt(booking.total)}\n\n` +
       `Please confirm my appointment.`;
     window.location.href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(
       msg,
     )}`;
   };
 
-  const closeSuccess = () => {
-    setSuccess(false);
-    setBooking(null);
-    setItems([]);
-    resetDraft();
-    setName("");
-    setPhone("");
-    setEmail("");
-    setPhoneErr("");
-    setPayOpt("full");
-    setStep(0);
-  };
+  const ctaLabel = (() => {
+    if (svcType === "mobile") return "Book Appointment";
+    if (payOpt === "full") return `Pay ${fmt(total)}`;
+    return `Pay 50% — ${fmt(Math.round(total * 0.5))}`;
+  })();
 
-  // Draft subtotal for the "This Service" panel
-  const draftSubtotal = service
-    ? getPrice(svcType, service, duration) +
-      addons.reduce(
-        (a, id) => a + (ADDONS.find((x) => x.id === id)?.price || 0),
-        0,
-      )
-    : 0;
-
+  // ─────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────
   return (
-    <div className="flex gap-6 max-w-6xl mx-auto">
-      <div className="flex-1 min-w-0">
-        {/* Progress */}
-        <div className="mb-5 px-1">
-          <div className="flex gap-1.5 mb-2">
-            {STEPS.map((_, n) => (
+    <div className="max-w-2xl mx-auto pb-32 md:pb-16">
+      {/* ── Progress ── */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          {STEPS.map((label, i) => (
+            <div key={i} className="flex-1 flex items-center gap-2">
               <div
-                key={n}
-                className="flex-1 rounded-full"
+                className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all"
                 style={{
-                  height: 3,
                   background:
-                    step > n
-                      ? "#0891b2"
-                      : step === n
-                        ? "rgba(255,255,255,0.95)"
-                        : "rgba(255,255,255,0.2)",
-                  transition: "background 0.35s ease",
-                }}
-              />
-            ))}
-          </div>
-          <div className="flex">
-            {STEPS.map((label, i) => (
-              <div key={i} className="flex-1 text-center px-0.5">
-                <span
-                  style={{
-                    fontSize: "0.58rem",
-                    display: "block",
-                    lineHeight: 1.3,
-                    letterSpacing: "0.01em",
-                    fontWeight: step === i ? 700 : 400,
-                    color:
-                      step > i
-                        ? "rgba(255,255,255,0.55)"
-                        : step === i
-                          ? "white"
-                          : "rgba(255,255,255,0.28)",
-                  }}
-                >
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Card */}
-        <div
-          className="bg-white rounded-2xl shadow-sm overflow-hidden"
-          style={{ border: "1px solid #e5e7eb" }}
-        >
-          <div
-            className="px-5 sm:px-6 py-4"
-            style={{ background: "linear-gradient(135deg,#0891b2,#06b6d4)" }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p
-                  className="font-bold text-white"
-                  style={{
-                    fontFamily: "Cormorant Garamond",
-                    fontSize: "1.15rem",
-                  }}
-                >
-                  {step === 0 && "Choose Your Massage"}
-                  {step === 1 && "Enhance Your Session"}
-                  {step === 2 && "Therapist Preference"}
-                  {step === 3 && "Date & Time"}
-                  {step === 4 && "Your Details & Review"}
-                </p>
-                <p
-                  className="text-xs mt-0.5"
-                  style={{ color: "rgba(255,255,255,0.75)" }}
-                >
-                  {step === 0 && "Pick a location, then a massage"}
-                  {step === 1 && "Optional add-ons to elevate your experience"}
-                  {step === 2 && "Male or female therapist — your choice"}
-                  {step === 3 && "Live availability — we hide booked slots"}
-                  {step === 4 && "Add to your session, then complete below"}
-                </p>
-              </div>
-              <div className="text-right flex-shrink-0 ml-4">
-                <p
-                  className="text-xs font-semibold uppercase tracking-widest"
-                  style={{ color: "rgba(255,255,255,0.55)" }}
-                >
-                  Step
-                </p>
-                <p
-                  className="font-bold text-white leading-none"
-                  style={{
-                    fontFamily: "Cormorant Garamond",
-                    fontSize: "1.6rem",
-                  }}
-                >
-                  {step + 1}
-                  <span
-                    style={{
-                      fontSize: "0.9rem",
-                      fontWeight: 400,
-                      opacity: 0.55,
-                    }}
-                  >
-                    /5
-                  </span>
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-5 sm:p-6">
-            {toast && (
-              <div
-                className="flex items-center gap-2 rounded-xl p-3 mb-4 text-xs font-semibold"
-                style={{
-                  background: "#ecfdf5",
-                  border: "1px solid #a7f3d0",
-                  color: "#065f46",
+                    step > i
+                      ? "#10b981"
+                      : step === i
+                        ? "linear-gradient(135deg,#0891b2,#06b6d4)"
+                        : "rgba(255,255,255,0.15)",
+                  color: step >= i ? "white" : "rgba(255,255,255,0.5)",
+                  boxShadow:
+                    step === i ? "0 4px 12px rgba(6,182,212,0.4)" : "none",
                 }}
               >
-                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                {toast.msg}
+                {step > i ? <Check className="w-3.5 h-3.5" /> : i + 1}
               </div>
-            )}
-
-            <div key={step} className={slideDir === "fwd" ? "sfwd" : "sbck"}>
-              {/* ───── STEP 0 — Location + Service ───── */}
-              {step === 0 && (
-                <div className="space-y-6">
-                  {/* Location */}
-                  <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                      Service Location
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        {
-                          id: "studio",
-                          label: "Home Studio",
-                          sub: "Our private studio",
-                          note: "💳 Pay online",
-                          Icon: Building2,
-                        },
-                        {
-                          id: "mobile",
-                          label: "Mobile Service",
-                          sub: "Home or hotel",
-                          note: "💰 Pay after session",
-                          Icon: Home,
-                        },
-                      ].map((o) => (
-                        <div
-                          key={o.id}
-                          onClick={() => setSvcType(o.id)}
-                          className="p-4 rounded-xl cursor-pointer ch border-2"
-                          style={{
-                            borderColor:
-                              svcType === o.id ? "#06b6d4" : "#e5e7eb",
-                            background: svcType === o.id ? "#f0f9ff" : "white",
-                          }}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <o.Icon
-                              className="w-5 h-5"
-                              style={{
-                                color:
-                                  svcType === o.id ? "#0891b2" : "#9ca3af",
-                              }}
-                            />
-                            {svcType === o.id && <Tick />}
-                          </div>
-                          <p className="font-bold text-gray-900 text-sm">
-                            {o.label}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {o.sub}
-                          </p>
-                          <p
-                            className="text-xs font-semibold mt-2"
-                            style={{ color: "#0891b2" }}
-                          >
-                            {o.note}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Flat service list */}
-                  <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                      Choose Massage
-                    </p>
-                    <div className="space-y-2">
-                      {SERVICES.map((svc) => (
-                        <div
-                          key={svc.id}
-                          onClick={() => setService(svc.id)}
-                          className="p-3 rounded-xl cursor-pointer ch border-2 flex items-start gap-3"
-                          style={{
-                            borderColor:
-                              service === svc.id ? "#06b6d4" : "#e5e7eb",
-                            background:
-                              service === svc.id ? "#f0f9ff" : "white",
-                          }}
-                        >
-                          <img
-                            src={svc.image}
-                            alt=""
-                            className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                              <span>{svc.icon}</span>
-                              <span className="font-bold text-gray-900 text-sm">
-                                {svc.name}
-                              </span>
-                              <span
-                                className={`text-xs px-2 py-0.5 rounded-full font-semibold ${svc.bc}`}
-                              >
-                                {svc.badge}
-                              </span>
-                            </div>
-                            <p className="text-xs text-gray-400 leading-relaxed">
-                              {svc.desc}
-                            </p>
-                            {svc.benefit && (
-                              <p
-                                className="text-xs mt-1 leading-relaxed"
-                                style={{ color: "#0891b2" }}
-                              >
-                                <b>Benefits:</b> {svc.benefit}
-                              </p>
-                            )}
-                            <div className="flex flex-wrap gap-1 mt-1.5">
-                              {Object.entries(PRICING[svcType][svc.id]).map(
-                                ([m, p]) => (
-                                  <span
-                                    key={m}
-                                    className="text-xs px-1.5 py-0.5 rounded font-medium"
-                                    style={{
-                                      background: "#f0f9ff",
-                                      color: "#0891b2",
-                                      border: "1px solid #bae6fd",
-                                    }}
-                                  >
-                                    {Object.keys(PRICING[svcType][svc.id])
-                                      .length > 1
-                                      ? `${m}min · `
-                                      : ""}
-                                    {fmt(p)}
-                                  </span>
-                                ),
-                              )}
-                            </div>
-                          </div>
-                          {service === svc.id && <Tick />}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {service && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                        Duration
-                      </p>
-                      <div className="grid grid-cols-3 gap-3">
-                        {durList(service).map((m) => {
-                          const p = getPrice(svcType, service, m);
-                          const sel = Number(duration) === m;
-                          return (
-                            <div
-                              key={m}
-                              onClick={() => setDuration(m)}
-                              className="p-4 rounded-xl cursor-pointer ch border-2 text-center"
-                              style={{
-                                borderColor: sel ? "#06b6d4" : "#e5e7eb",
-                                background: sel ? "#f0f9ff" : "white",
-                              }}
-                            >
-                              <div
-                                className="text-2xl sm:text-3xl font-bold text-gray-900"
-                                style={{ fontFamily: "Cormorant Garamond" }}
-                              >
-                                {m}
-                              </div>
-                              <div className="text-xs text-gray-400 mb-1">
-                                MIN
-                              </div>
-                              <div
-                                className="text-sm font-bold"
-                                style={{ color: "#0891b2" }}
-                              >
-                                {fmt(p)}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              {i < STEPS.length - 1 && (
+                <div
+                  className="flex-1 h-0.5 rounded-full transition-all"
+                  style={{
+                    background: step > i ? "#10b981" : "rgba(255,255,255,0.15)",
+                  }}
+                />
               )}
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-center text-cyan-200">
+          Step {step + 1} of 5 · {STEPS[step]}
+        </p>
+      </div>
 
-              {/* ───── STEP 1 — Add-ons ───── */}
-              {step === 1 && (
-                <div className="space-y-3">
-                  <div
-                    className="flex items-center gap-2 rounded-xl p-3 text-xs"
-                    style={{
-                      background: "#ecfeff",
-                      border: "1px solid #a5f3fc",
-                      color: "#155e75",
-                    }}
-                  >
-                    <Sparkles className="w-4 h-4" /> Add-ons extend your
-                    session — duration adjusts automatically.
-                  </div>
-                  {ADDONS.map((a) => {
-                    const on = addons.includes(a.id);
-                    return (
-                      <div
-                        key={a.id}
-                        onClick={() =>
-                          setAddons(
-                            on
-                              ? addons.filter((x) => x !== a.id)
-                              : [...addons, a.id],
-                          )
-                        }
-                        className="p-4 rounded-xl cursor-pointer ch border-2 flex items-center gap-3"
-                        style={{
-                          borderColor: on ? "#06b6d4" : "#e5e7eb",
-                          background: on ? "#f0f9ff" : "white",
-                        }}
-                      >
-                        <div className="text-2xl">{a.icon}</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-gray-900 text-sm">
-                            {a.name}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {a.desc}
-                            {a.minutes > 0 ? ` · +${a.minutes} min` : ""}
-                          </p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p
-                            className="text-sm font-bold"
-                            style={{ color: "#0891b2" }}
-                          >
-                            +{fmt(a.price)}
-                          </p>
-                          {on && (
-                            <p className="text-xs text-emerald-600 font-semibold">
-                              Added
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {addons.length > 0 && (
-                    <div
-                      className="rounded-xl p-3 flex justify-between text-sm"
+      {/* ── Card ── */}
+      <div
+        className="bg-white rounded-3xl overflow-hidden shadow-2xl"
+        style={{ border: "1px solid rgba(255,255,255,0.1)" }}
+      >
+        {/* Header */}
+        <div
+          className="px-6 py-5"
+          style={{
+            background: "linear-gradient(135deg,#0891b2,#06b6d4)",
+          }}
+        >
+          <p
+            className="font-bold text-white leading-tight"
+            style={{ fontFamily: "Cormorant Garamond", fontSize: "1.4rem" }}
+          >
+            {step === 0 && "Choose your massage"}
+            {step === 1 && "Add something special?"}
+            {step === 2 && "Pick your therapist"}
+            {step === 3 && "When works best?"}
+            {step === 4 && "Almost done"}
+          </p>
+          <p className="text-xs text-cyan-50 mt-1">
+            {step === 0 && "Pick location, massage and duration"}
+            {step === 1 && "Optional — skip if you prefer"}
+            {step === 2 && "Male, female, or let us choose"}
+            {step === 3 && "Live slots — booked times are hidden"}
+            {step === 4 && "Enter your details and confirm"}
+          </p>
+        </div>
+
+        {/* Body */}
+        <div className="p-5 sm:p-7">
+          {/* ─────── STEP 0: Location + Service + Duration ─────── */}
+          {step === 0 && (
+            <div className="space-y-6">
+              {/* Location */}
+              <div>
+                <Label>Location</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    {
+                      id: "studio",
+                      label: "Home Studio",
+                      sub: "Pay online",
+                      Icon: Building2,
+                    },
+                    {
+                      id: "mobile",
+                      label: "Mobile",
+                      sub: "Pay after",
+                      Icon: Home,
+                    },
+                  ].map((o) => (
+                    <button
+                      key={o.id}
+                      onClick={() => setSvcType(o.id)}
+                      className="p-4 rounded-2xl border-2 transition-all text-left"
                       style={{
-                        background: "#f0fdf4",
-                        border: "1px solid #bbf7d0",
+                        borderColor: svcType === o.id ? "#06b6d4" : "#e5e7eb",
+                        background: svcType === o.id ? "#f0f9ff" : "white",
                       }}
                     >
-                      <span className="text-emerald-800 font-semibold">
-                        Add-ons total
-                      </span>
-                      <span className="font-bold text-emerald-700">
-                        {fmt(
-                          addons.reduce(
-                            (a, id) =>
-                              a + (ADDONS.find((x) => x.id === id)?.price || 0),
-                            0,
-                          ),
-                        )}
-                      </span>
-                    </div>
-                  )}
+                      <div className="flex items-center justify-between mb-2">
+                        <o.Icon
+                          className="w-5 h-5"
+                          style={{
+                            color: svcType === o.id ? "#0891b2" : "#9ca3af",
+                          }}
+                        />
+                        {svcType === o.id && <CheckMark />}
+                      </div>
+                      <p className="font-bold text-gray-900 text-sm">
+                        {o.label}
+                      </p>
+                      <p
+                        className="text-xs mt-0.5 font-semibold"
+                        style={{ color: "#0891b2" }}
+                      >
+                        {o.sub}
+                      </p>
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
 
-              {/* ───── STEP 2 — Therapist ───── */}
-              {step === 2 && (
+              {/* Services */}
+              <div>
+                <Label>Massage</Label>
                 <div className="space-y-3">
-                  <IB text="All massages are available with either a male or female therapist. Choose whichever you prefer." />
-                  {THERAPISTS.map((t) => {
-                    const sel = therapist === t.id;
+                  {SERVICES.map((svc) => {
+                    const sel = service === svc.id;
                     return (
-                      <div
-                        key={t.id}
-                        onClick={() => setTherapist(t.id)}
-                        className="p-4 rounded-xl cursor-pointer ch border-2"
+                      <button
+                        key={svc.id}
+                        onClick={() => setService(svc.id)}
+                        className="w-full p-4 rounded-2xl border-2 text-left transition-all flex items-start gap-3"
                         style={{
                           borderColor: sel ? "#06b6d4" : "#e5e7eb",
                           background: sel ? "#f0f9ff" : "white",
                         }}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-3">
-                            <div
-                              className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                              style={{
-                                background: sel ? "#0891b2" : "#f1f5f9",
-                              }}
-                            >
-                              <User
-                                className="w-5 h-5"
-                                style={{ color: sel ? "white" : "#94a3b8" }}
-                              />
-                            </div>
-                            <div>
-                              <p className="font-bold text-gray-900 text-sm">
-                                {t.name}
-                              </p>
-                              <p className="text-xs text-gray-400">{t.role}</p>
-                              <div className="flex flex-wrap gap-1 mt-1.5">
-                                {t.specialties.map((s) => (
-                                  <span
-                                    key={s}
-                                    className="text-xs px-1.5 py-0.5 rounded font-medium"
-                                    style={{
-                                      background: "#f0f9ff",
-                                      color: "#0891b2",
-                                    }}
-                                  >
-                                    {s}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          {sel && <Tick />}
+                        <div
+                          className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl"
+                          style={{
+                            background: sel ? "#e0f2fe" : "#f3f4f6",
+                          }}
+                        >
+                          {svc.icon}
                         </div>
-                      </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className="font-bold text-gray-900 text-sm">
+                              {svc.name}
+                            </span>
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded-full font-semibold ${svc.bc}`}
+                            >
+                              {svc.badge}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 leading-relaxed">
+                            {svc.benefit}
+                          </p>
+                          <p
+                            className="text-xs mt-2 font-bold"
+                            style={{ color: "#0891b2" }}
+                          >
+                            From {fmt(getPrice(svcType, svc.id, 60))}
+                          </p>
+                        </div>
+                        {sel && <CheckMark />}
+                      </button>
                     );
                   })}
                 </div>
-              )}
+              </div>
 
-              {/* ───── STEP 3 — Date & Time ───── */}
-              {step === 3 && (
-                <div className="space-y-6">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                      Pick a Date
-                    </p>
-                    <DateStrip value={date} onChange={setDate} />
-                  </div>
-
-                  {date && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                        Available Times{" "}
-                        <span className="font-normal normal-case text-gray-400">
-                          · {draftDuration} min session
-                        </span>
-                      </p>
-                      {svcType === "mobile" && (
-                        <IB text="Mobile service runs 7 AM – 12 AM, 7 days a week." />
-                      )}
-                      <div className="mt-3">
-                        <SlotGrid
-                          available={available}
-                          loading={slotsLoading}
-                          selected={time}
-                          onSelect={setTime}
-                          serviceType={svcType}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* ───── STEP 4 — Details ───── */}
-              {step === 4 && (
-                <div className="space-y-5">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                      Your Information
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <TF
-                        label="Full Name *"
-                        value={name}
-                        onChange={setName}
-                        placeholder="Your full name"
-                      />
-                      <PF
-                        label="Phone Number *"
-                        value={phone}
-                        error={phoneErr}
-                        onChange={(v) => {
-                          setPhone(v);
-                          const d = v.replace(/\D/g, "");
-                          setPhoneErr(
-                            d.length > 0 && d.length < 11
-                              ? "Must be 11 digits"
-                              : "",
-                          );
-                        }}
-                      />
-                    </div>
-                    <div className="mt-4">
-                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                        Email *{" "}
-                        <span className="font-normal text-gray-400">
-                          (for confirmation)
-                        </span>
-                      </label>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@email.com"
-                        className="w-full p-3 rounded-lg text-sm"
-                        style={{
-                          border: `2px solid ${email ? "#06b6d4" : "#e5e7eb"}`,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {svcType === "studio" && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                        Payment Option
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {[
-                          {
-                            id: "full",
-                            l: "Pay in Full",
-                            s: "Complete payment now",
-                            a: draftSubtotal,
-                          },
-                          {
-                            id: "deposit",
-                            l: "50% Deposit",
-                            s: "Balance at the studio",
-                            a: Math.round(draftSubtotal * 0.5),
-                          },
-                        ].map((o) => (
-                          <SC
-                            key={o.id}
-                            sel={payOpt === o.id}
-                            onClick={() => setPayOpt(o.id)}
-                          >
-                            <div>
-                              <p className="font-bold text-gray-900 text-sm mb-0.5">
-                                {o.l}
-                              </p>
-                              <p className="text-xs text-gray-500 mb-1">
-                                {o.s}
-                              </p>
-                              <p
-                                className="text-base font-bold"
-                                style={{ color: "#0891b2" }}
-                              >
-                                {fmt(o.a)}
-                              </p>
-                            </div>
-                          </SC>
-                        ))}
-                      </div>
-                      <IB text="Studio bookings require online payment via Paystack." />
-                    </div>
-                  )}
-
-                  {svcType === "mobile" && (
-                    <div
-                      className="rounded-xl p-4"
-                      style={{
-                        background: "#ecfdf5",
-                        border: "1.5px solid #a7f3d0",
-                      }}
-                    >
-                      <p className="font-bold text-gray-900 text-sm">
-                        Pay After Session
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        For mobile service, payment is collected after your
-                        massage is complete.
-                      </p>
-                    </div>
-                  )}
-
-                  {step0Valid && (
-                    <div
-                      className="rounded-xl p-4"
-                      style={{
-                        background: "#f8fafc",
-                        border: "1.5px solid #e2e8f0",
-                      }}
-                    >
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                        This Service
-                      </p>
-                      <div className="space-y-1.5 text-xs">
-                        <Row
-                          label="Service"
-                          value={
-                            SERVICES.find((s) => s.id === service)?.name || "—"
-                          }
-                        />
-                        <Row
-                          label="Location"
-                          value={
-                            svcType === "studio" ? "Home Studio" : "Mobile"
-                          }
-                        />
-                        <Row label="Duration" value={`${duration} min`} />
-                        <Row
-                          label="Therapist"
-                          value={
-                            therapist === "male"
-                              ? "Male"
-                              : therapist === "female"
-                                ? "Female"
-                                : "Any"
-                          }
-                        />
-                        <Row label="Date" value={date || "—"} />
-                        <Row label="Time" value={time || "—"} />
-                        {addons.length > 0 && (
-                          <Row
-                            label="Add-ons"
-                            value={`${addons.length} selected`}
-                          />
-                        )}
-                      </div>
-                      <div
-                        className="flex justify-between items-center pt-3 mt-3"
-                        style={{ borderTop: "1.5px solid #e2e8f0" }}
-                      >
-                        <span className="text-sm font-semibold text-gray-600">
-                          Subtotal
-                        </span>
-                        <span
-                          className="text-2xl font-bold"
+              {/* Duration */}
+              {service && (
+                <div>
+                  <Label>Duration</Label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {durList(service).map((m) => {
+                      const p = getPrice(svcType, service, m);
+                      const sel = Number(duration) === m;
+                      return (
+                        <button
+                          key={m}
+                          onClick={() => setDuration(m)}
+                          className="p-4 rounded-2xl border-2 text-center transition-all"
                           style={{
-                            fontFamily: "Cormorant Garamond",
-                            color: "#0891b2",
+                            borderColor: sel ? "#06b6d4" : "#e5e7eb",
+                            background: sel ? "#f0f9ff" : "white",
                           }}
                         >
-                          {fmt(draftSubtotal)}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {items.length > 0 && (
-                    <div
-                      className="flex items-center gap-2 rounded-xl p-3 text-xs"
-                      style={{
-                        background: "#f0f9ff",
-                        border: "1px solid #bae6fd",
-                        color: "#0c4a6e",
-                      }}
-                    >
-                      <ShoppingBag className="w-4 h-4 flex-shrink-0" />
-                      <span>
-                        You have <b>{items.length}</b> item
-                        {items.length > 1 ? "s" : ""} in your session. Add this
-                        service or finish from the cart.
-                      </span>
-                    </div>
-                  )}
+                          <p
+                            className="text-2xl font-bold text-gray-900"
+                            style={{ fontFamily: "Cormorant Garamond" }}
+                          >
+                            {m}
+                          </p>
+                          <p className="text-xs text-gray-400 mb-1">MIN</p>
+                          <p
+                            className="text-sm font-bold"
+                            style={{ color: "#0891b2" }}
+                          >
+                            {fmt(p)}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
+          )}
 
-            {/* Nav */}
-            <div
-              className="flex gap-3 mt-6 pt-5"
-              style={{ borderTop: "1px solid #f1f5f9" }}
-            >
-              <button
-                onClick={goBack}
-                disabled={step === 0}
-                className="px-5 py-3 rounded-xl font-semibold text-sm border-2"
-                style={{
-                  borderColor: step === 0 ? "#f3f4f6" : "#e5e7eb",
-                  color: step === 0 ? "#d1d5db" : "#374151",
-                  background: "white",
-                  cursor: step === 0 ? "not-allowed" : "pointer",
-                }}
-              >
-                ← Back
-              </button>
-
-              {step < 4 ? (
-                <>
-                  {step === 1 && (
-                    <button
-                      onClick={goNext}
-                      className="px-4 py-3 rounded-xl font-semibold text-sm border-2"
-                      style={{
-                        borderColor: "#e5e7eb",
-                        color: "#374151",
-                        background: "white",
-                      }}
-                    >
-                      Skip
-                    </button>
-                  )}
+          {/* ─────── STEP 1: Add-ons ─────── */}
+          {step === 1 && (
+            <div className="space-y-3">
+              {ADDONS.map((a) => {
+                const on = addons.includes(a.id);
+                return (
                   <button
-                    onClick={() => {
-                      if (stepValids[step]) goNext();
-                    }}
-                    disabled={!stepValids[step]}
-                    className="flex-1 py-3 rounded-xl font-bold text-sm"
+                    key={a.id}
+                    onClick={() =>
+                      setAddons(
+                        on
+                          ? addons.filter((x) => x !== a.id)
+                          : [...addons, a.id],
+                      )
+                    }
+                    className="w-full p-4 rounded-2xl border-2 flex items-center gap-3 text-left transition-all"
                     style={{
-                      background: stepValids[step]
-                        ? "linear-gradient(135deg,#0891b2,#06b6d4)"
-                        : "#e5e7eb",
-                      color: stepValids[step] ? "white" : "#9ca3af",
-                      cursor: stepValids[step] ? "pointer" : "not-allowed",
-                      boxShadow: stepValids[step]
-                        ? "0 4px 14px rgba(8,145,178,0.25)"
-                        : "none",
+                      borderColor: on ? "#06b6d4" : "#e5e7eb",
+                      background: on ? "#f0f9ff" : "white",
                     }}
                   >
-                    Next →
+                    <div className="text-3xl flex-shrink-0">{a.icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-900 text-sm">
+                        {a.name}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">{a.desc}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p
+                        className="text-sm font-bold"
+                        style={{ color: "#0891b2" }}
+                      >
+                        +{fmt(a.price)}
+                      </p>
+                      {on && (
+                        <p className="text-xs text-emerald-600 font-bold mt-1">
+                          ✓ Added
+                        </p>
+                      )}
+                    </div>
                   </button>
-                </>
-              ) : (
+                );
+              })}
+            </div>
+          )}
+
+          {/* ─────── STEP 2: Therapist ─────── */}
+          {step === 2 && (
+            <div className="space-y-3">
+              {THERAPISTS.map((t) => {
+                const sel = therapist === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setTherapist(t.id)}
+                    className="w-full p-4 rounded-2xl border-2 flex items-center gap-3 text-left transition-all"
+                    style={{
+                      borderColor: sel ? "#06b6d4" : "#e5e7eb",
+                      background: sel ? "#f0f9ff" : "white",
+                    }}
+                  >
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{
+                        background: sel ? "#0891b2" : "#f1f5f9",
+                      }}
+                    >
+                      <User
+                        className="w-5 h-5"
+                        style={{ color: sel ? "white" : "#94a3b8" }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-900 text-sm">
+                        {t.name}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">{t.role}</p>
+                    </div>
+                    {sel && <CheckMark />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ─────── STEP 3: Date + Time ─────── */}
+          {step === 3 && (
+            <div className="space-y-6">
+              <div>
+                <Label>Date</Label>
+                <DateStrip value={date} onChange={setDate} />
+              </div>
+
+              {date && (
+                <div>
+                  <Label>
+                    Time{" "}
+                    <span className="text-gray-400 font-normal">
+                      · {totalDuration} min
+                    </span>
+                  </Label>
+                  {svcType === "mobile" && (
+                    <p className="text-xs text-gray-500 mb-3">
+                      Mobile service runs 7 AM – 12 AM, 7 days a week
+                    </p>
+                  )}
+                  <SlotGrid
+                    available={available}
+                    loading={slotsLoading}
+                    selected={time}
+                    onSelect={setTime}
+                    serviceType={svcType}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ─────── STEP 4: Details + Confirm ─────── */}
+          {step === 4 && (
+            <div className="space-y-6">
+              <div>
+                <Label>Your Details</Label>
+                <div className="space-y-4">
+                  <Field
+                    label="Full Name"
+                    value={name}
+                    onChange={setName}
+                    placeholder="Adeola Ogunlesi"
+                  />
+                  <PhoneField
+                    label="Phone Number"
+                    value={phone}
+                    error={phoneErr}
+                    onChange={(v) => {
+                      setPhone(v);
+                      const d = v.replace(/\D/g, "");
+                      setPhoneErr(
+                        d.length > 0 && d.length < 11
+                          ? "Must be 11 digits"
+                          : "",
+                      );
+                    }}
+                  />
+                  <Field
+                    label="Email"
+                    type="email"
+                    value={email}
+                    onChange={setEmail}
+                    placeholder="you@email.com"
+                  />
+                </div>
+              </div>
+
+              {svcType === "studio" && (
+                <div>
+                  <Label>Payment Option</Label>
+                  <div className="grid grid-cols-1 gap-3">
+                    {[
+                      {
+                        id: "full",
+                        l: "Pay in full",
+                        s: "Complete payment now",
+                        a: total,
+                      },
+                      {
+                        id: "deposit",
+                        l: "50% Deposit",
+                        s: "Balance at the studio",
+                        a: Math.round(total * 0.5),
+                      },
+                    ].map((o) => (
+                      <button
+                        key={o.id}
+                        onClick={() => setPayOpt(o.id)}
+                        className="p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between gap-3"
+                        style={{
+                          borderColor: payOpt === o.id ? "#06b6d4" : "#e5e7eb",
+                          background: payOpt === o.id ? "#f0f9ff" : "white",
+                        }}
+                      >
+                        <div>
+                          <p className="font-bold text-gray-900 text-sm">
+                            {o.l}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">{o.s}</p>
+                        </div>
+                        <p
+                          className="text-lg font-bold"
+                          style={{ color: "#0891b2" }}
+                        >
+                          {fmt(o.a)}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Summary */}
+              <div
+                className="rounded-2xl p-4"
+                style={{
+                  background: "linear-gradient(135deg,#f0f9ff,#e0f2fe)",
+                  border: "2px solid #bae6fd",
+                }}
+              >
+                <p className="text-xs font-bold uppercase tracking-wider text-cyan-700 mb-3">
+                  Your Booking
+                </p>
+                <SummaryRow
+                  icon="💆"
+                  label="Massage"
+                  value={SERVICES.find((s) => s.id === service)?.name}
+                />
+                <SummaryRow
+                  icon={svcType === "studio" ? "🏢" : "🏠"}
+                  label="Location"
+                  value={
+                    svcType === "studio" ? "Home Studio" : "Mobile Service"
+                  }
+                />
+                <SummaryRow
+                  icon="⏱"
+                  label="Duration"
+                  value={`${totalDuration} min`}
+                />
+                <SummaryRow
+                  icon="👤"
+                  label="Therapist"
+                  value={
+                    therapist === "male"
+                      ? "Male"
+                      : therapist === "female"
+                        ? "Female"
+                        : "Any"
+                  }
+                />
+                {addons.length > 0 && (
+                  <SummaryRow
+                    icon="✨"
+                    label="Add-ons"
+                    value={addons
+                      .map((id) => ADDONS.find((x) => x.id === id)?.name)
+                      .join(", ")}
+                  />
+                )}
+                <SummaryRow
+                  icon="📅"
+                  label="Date"
+                  value={`${date} · ${time}`}
+                />
+                <div
+                  className="flex justify-between items-center pt-3 mt-3"
+                  style={{ borderTop: "1px solid #bae6fd" }}
+                >
+                  <span className="text-sm font-bold text-gray-700">Total</span>
+                  <span
+                    className="text-2xl font-bold"
+                    style={{
+                      fontFamily: "Cormorant Garamond",
+                      color: "#0891b2",
+                    }}
+                  >
+                    {fmt(total)}
+                  </span>
+                </div>
+              </div>
+
+              {svcType === "mobile" && (
+                <InfoBar icon={<Wallet className="w-4 h-4" />}>
+                  <b>Pay after session</b> — cash or transfer to your therapist
+                  when done.
+                </InfoBar>
+              )}
+              {svcType === "studio" && (
+                <InfoBar icon={<ShieldCheck className="w-4 h-4" />}>
+                  <b>Secure payment</b> — encrypted via Paystack. 256-bit SSL.
+                </InfoBar>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer nav */}
+        <div className="p-5 sm:p-6 border-t border-gray-100 bg-gray-50">
+          <div className="flex gap-3">
+            {step > 0 && (
+              <button
+                onClick={back}
+                className="px-5 py-4 rounded-2xl font-bold text-sm border-2 border-gray-200 bg-white text-gray-700 hover:bg-gray-100 transition-all"
+              >
+                <ArrowLeft className="w-4 h-4 inline mr-1" />
+                Back
+              </button>
+            )}
+
+            {step < 4 ? (
+              <>
+                {step === 1 && (
+                  <button
+                    onClick={next}
+                    className="px-5 py-4 rounded-2xl font-bold text-sm border-2 border-gray-200 bg-white text-gray-500 hover:bg-gray-100 transition-all"
+                  >
+                    Skip
+                  </button>
+                )}
                 <button
-                  onClick={addToSession}
-                  disabled={!step4Valid}
-                  className="flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
+                  onClick={next}
+                  disabled={!stepValid[step]}
+                  className="flex-1 py-4 rounded-2xl font-bold text-sm text-white transition-all flex items-center justify-center gap-2"
                   style={{
-                    background: step4Valid
+                    background: stepValid[step]
                       ? "linear-gradient(135deg,#0891b2,#06b6d4)"
-                      : "#e5e7eb",
-                    color: step4Valid ? "white" : "#9ca3af",
-                    cursor: step4Valid ? "pointer" : "not-allowed",
-                    boxShadow: step4Valid
-                      ? "0 4px 14px rgba(8,145,178,0.3)"
+                      : "#d1d5db",
+                    cursor: stepValid[step] ? "pointer" : "not-allowed",
+                    boxShadow: stepValid[step]
+                      ? "0 6px 20px rgba(6,182,212,0.35)"
                       : "none",
                   }}
                 >
-                  <Plus className="w-4 h-4" />
-                  Add to Session
+                  Continue
+                  <ArrowRight className="w-4 h-4" />
                 </button>
-              )}
-            </div>
-
-            {step === 4 && items.length > 0 && (
-              <p className="text-xs text-center mt-3 text-gray-400">
-                Ready to finish? Open your cart (
-                <b className="lg:hidden">tap the bag button</b>
-                <b className="hidden lg:inline">right panel</b>) and tap{" "}
-                <b>Book Appointment</b> or <b>Continue to Payment</b>.
-              </p>
+              </>
+            ) : (
+              <button
+                onClick={submitBooking}
+                disabled={!customerValid}
+                className="flex-1 py-4 rounded-2xl font-bold text-sm text-white transition-all"
+                style={{
+                  background: customerValid
+                    ? svcType === "mobile"
+                      ? "linear-gradient(135deg,#059669,#10b981)"
+                      : "linear-gradient(135deg,#0891b2,#06b6d4)"
+                    : "#d1d5db",
+                  cursor: customerValid ? "pointer" : "not-allowed",
+                  boxShadow: customerValid
+                    ? "0 6px 20px rgba(6,182,212,0.35)"
+                    : "none",
+                }}
+              >
+                {ctaLabel}
+              </button>
             )}
           </div>
         </div>
-
-        {/* Mobile cart FAB */}
-        {items.length > 0 && (
-          <button
-            onClick={() => setCartOpen(true)}
-            className="lg:hidden fixed bottom-5 right-5 z-40 rounded-full px-5 py-3 shadow-2xl flex items-center gap-2 font-semibold text-white"
-            style={{ background: "linear-gradient(135deg,#0891b2,#06b6d4)" }}
-          >
-            <ShoppingBag className="w-4 h-4" />
-            {items.length} · {fmt(subtotal)}
-          </button>
-        )}
       </div>
 
-      <CartSidebar
-        items={items}
-        onRemove={removeItem}
-        open={cartOpen}
-        onClose={() => setCartOpen(false)}
-        subtotal={subtotal}
-        canCheckout={canPay}
-        onCheckout={handlePay}
-        customerName={name}
-      />
-
+      {/* Loading overlay */}
       {loading && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center"
+          className="fixed inset-0 z-50 flex items-center justify-center"
           style={{
-            background: "rgba(0,0,0,0.65)",
+            background: "rgba(0,0,0,0.6)",
             backdropFilter: "blur(6px)",
           }}
         >
-          <div className="bg-white rounded-2xl p-8 text-center shadow-2xl mx-4">
+          <div className="bg-white rounded-3xl p-8 text-center shadow-2xl mx-4">
             <div
+              className="w-14 h-14 rounded-full mx-auto mb-4 animate-spin"
               style={{
-                width: 52,
-                height: 52,
                 border: "3px solid #e5e7eb",
                 borderTopColor: "#06b6d4",
-                borderRadius: "50%",
-                animation: "spin 0.8s linear infinite",
-                margin: "0 auto 16px",
               }}
             />
             <p
               className="font-bold text-gray-900"
-              style={{ fontFamily: "Cormorant Garamond", fontSize: 18 }}
+              style={{ fontFamily: "Cormorant Garamond", fontSize: 20 }}
             >
-              Processing…
+              {svcType === "mobile"
+                ? "Booking your appointment…"
+                : "Opening payment…"}
             </p>
           </div>
         </div>
       )}
 
+      {/* Success */}
       {success && booking && (
-        <Modal onClose={closeSuccess}>
-          <SuccessIcon />
-          <h3
-            className="text-2xl font-bold text-gray-900 text-center mb-1"
-            style={{ fontFamily: "Cormorant Garamond" }}
-          >
-            Booking Confirmed!
-          </h3>
-          <p className="text-center text-sm text-gray-500 mb-4">
-            Ref: <span className="font-mono font-semibold">{booking.ref}</span>
-          </p>
-          <div className="rounded-xl p-4 mb-4" style={{ background: "#f0f9ff" }}>
-            {booking.items.map((it, i) => (
-              <div key={i} className="flex justify-between text-sm mb-1">
-                <span className="text-gray-600 truncate">
-                  {it.serviceName} · {it.duration}min
-                </span>
-                <span className="font-semibold text-gray-800 ml-2">
-                  {fmt(getPrice(it.svcType, it.service, it.duration))}
-                </span>
-              </div>
-            ))}
-            <div
-              className="flex justify-between pt-2 mt-2"
-              style={{ borderTop: "1px solid #bae6fd" }}
+        <Modal onClose={reset}>
+          <div className="text-center mb-5">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 mx-auto flex items-center justify-center mb-3">
+              <Check className="w-8 h-8 text-emerald-600" />
+            </div>
+            <h3
+              className="text-2xl font-bold text-gray-900 mb-1"
+              style={{ fontFamily: "Cormorant Garamond" }}
             >
-              <span className="font-semibold text-gray-700">Total</span>
+              {booking.svcType === "mobile"
+                ? "Appointment Booked!"
+                : "Payment Confirmed!"}
+            </h3>
+            <p className="text-sm text-gray-500">
+              Ref: <span className="font-mono">{booking.ref}</span>
+            </p>
+          </div>
+
+          <div className="rounded-2xl p-4 mb-4 bg-cyan-50 border border-cyan-100">
+            <div className="flex justify-between text-sm mb-1">
+              <span className="text-gray-600">Massage</span>
+              <span className="font-semibold text-gray-900">
+                {booking.serviceName}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm mb-1">
+              <span className="text-gray-600">Duration</span>
+              <span className="font-semibold">{booking.duration} min</span>
+            </div>
+            <div className="flex justify-between text-sm mb-1">
+              <span className="text-gray-600">
+                {booking.svcType === "mobile" ? "Total" : "Paid"}
+              </span>
               <span
-                className="text-xl font-bold"
-                style={{ fontFamily: "Cormorant Garamond", color: "#0891b2" }}
+                className="text-lg font-bold"
+                style={{
+                  fontFamily: "Cormorant Garamond",
+                  color: "#0891b2",
+                }}
               >
-                {fmt(booking.subtotal)}
+                {fmt(booking.total)}
               </span>
             </div>
           </div>
-          <Btn color="whatsapp" onClick={sendWA}>
+
+          <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 mb-4 text-xs text-amber-800 leading-relaxed">
+            <b>What's next?</b> Our team will reach out on WhatsApp to confirm
+            your therapist and time slot.
+          </div>
+
+          <button
+            onClick={sendWA}
+            className="w-full py-3 rounded-xl font-semibold text-sm text-white mb-2"
+            style={{ background: "#25D366" }}
+          >
             💬 Send Details via WhatsApp
-          </Btn>
-          <Btn color="blue" onClick={closeSuccess}>
+          </button>
+          <button
+            onClick={reset}
+            className="w-full py-3 rounded-xl font-semibold text-sm bg-gray-100 text-gray-700"
+          >
             Done
-          </Btn>
+          </button>
         </Modal>
       )}
     </div>
   );
 }
 
-const Row = ({ label, value }) => (
-  <div className="flex justify-between">
-    <span className="text-gray-400">{label}</span>
-    <span className="font-semibold text-gray-800 text-right max-w-[60%] truncate">
+// ── Micro components ──
+const Label = ({ children }) => (
+  <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
+    {children}
+  </p>
+);
+
+const CheckMark = () => (
+  <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center flex-shrink-0">
+    <Check className="w-3.5 h-3.5 text-white" />
+  </div>
+);
+
+const Field = ({ label, value, onChange, placeholder, type = "text" }) => (
+  <div>
+    <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">
+      {label} *
+    </label>
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full px-4 py-3 rounded-xl text-sm border-2 transition-all"
+      style={{
+        borderColor: value ? "#06b6d4" : "#e5e7eb",
+        background: value ? "#f0f9ff" : "white",
+      }}
+    />
+  </div>
+);
+
+const PhoneField = ({ label, value, error, onChange }) => {
+  const digits = value.replace(/\D/g, "");
+  return (
+    <div>
+      <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">
+        {label} *
+      </label>
+      <input
+        type="tel"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="08012345678"
+        maxLength={14}
+        className="w-full px-4 py-3 rounded-xl text-sm border-2 transition-all"
+        style={{
+          borderColor: error
+            ? "#ef4444"
+            : digits.length === 11
+              ? "#06b6d4"
+              : "#e5e7eb",
+          background: digits.length === 11 ? "#f0f9ff" : "white",
+        }}
+      />
+      {error && <p className="text-xs text-red-500 mt-1.5">{error}</p>}
+      {!error && digits.length > 0 && (
+        <p
+          className="text-xs mt-1.5"
+          style={{ color: digits.length === 11 ? "#059669" : "#6b7280" }}
+        >
+          {digits.length}/11 digits {digits.length === 11 && "✓"}
+        </p>
+      )}
+    </div>
+  );
+};
+
+const SummaryRow = ({ icon, label, value }) => (
+  <div className="flex items-center justify-between text-sm mb-2">
+    <span className="text-gray-500 flex items-center gap-2">
+      <span>{icon}</span>
+      {label}
+    </span>
+    <span className="font-semibold text-gray-900 text-right max-w-[60%] truncate">
       {value}
     </span>
+  </div>
+);
+
+const InfoBar = ({ icon, children }) => (
+  <div className="flex items-start gap-2 p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-600 leading-relaxed">
+    <span className="flex-shrink-0 mt-0.5 text-cyan-600">{icon}</span>
+    <span>{children}</span>
+  </div>
+);
+
+const Modal = ({ children, onClose }) => (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center p-3"
+    style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
+    onClick={onClose}
+  >
+    <div
+      className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {children}
+    </div>
   </div>
 );

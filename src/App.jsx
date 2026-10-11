@@ -13,7 +13,6 @@ import {
   Calendar,
 } from "lucide-react";
 
-// Config (single source of truth)
 import {
   PRICING,
   SERVICES,
@@ -24,18 +23,23 @@ import {
   durList,
 } from "./config/services";
 
-// Shared UI primitives
 import { Tick, IB, TF, PF, SC, Modal, Btn } from "./components/ui";
 
-// Feature components
 import BookingWizard from "./components/BookingWizard";
 import SportsMassage from "./components/SportsMassage";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CONSTANTS
-// ─────────────────────────────────────────────────────────────────────────────
 const PAYSTACK_KEY = "pk_live_915663b76742c16f999c99e6251596ee7c5c9584";
 const WA_NUMBER = "2347040723894";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tab definitions — used by both desktop header and mobile bottom nav
+// ─────────────────────────────────────────────────────────────────────────────
+const TABS = [
+  { id: "booking", icon: "📅", short: "Book", full: "Book Session" },
+  { id: "sports", icon: "🏃", short: "Sports", full: "Sports Massage" },
+  { id: "membership", icon: "👑", short: "Member", full: "Membership" },
+  { id: "giftcard", icon: "🎁", short: "Gift", full: "Gift Card" },
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -70,22 +74,19 @@ const sendWA = (msg) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// INLINE MICRO-COMPONENTS (used only by Membership & GiftCard)
+// Micro components
 // ─────────────────────────────────────────────────────────────────────────────
 const FC = ({ children }) => (
   <div
-    className="bg-white rounded-2xl p-4 sm:p-6 lg:p-7 shadow-sm"
-    style={{ border: "1px solid #e5e7eb" }}
+    className="bg-white rounded-3xl p-5 sm:p-7 shadow-xl"
+    style={{ border: "1px solid rgba(255,255,255,0.1)" }}
   >
     {children}
   </div>
 );
 
 const SBox = ({ rows, hi }) => (
-  <div
-    className="rounded-xl p-3 sm:p-4 mb-4 space-y-2"
-    style={{ background: "#f0f9ff" }}
-  >
+  <div className="rounded-2xl p-4 mb-4 space-y-2 bg-cyan-50 border border-cyan-100">
     {rows.map(([l, v]) => (
       <div key={l} className="flex justify-between text-sm">
         <span className="text-gray-500 text-xs sm:text-sm">{l}</span>
@@ -188,8 +189,8 @@ const MembershipSection = ({ sendEmail }) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="text-center mb-8 sm:mb-10 px-2">
+    <div className="max-w-2xl mx-auto pb-32 md:pb-16">
+      <div className="text-center mb-8 px-2">
         <div
           className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-4 text-xs font-semibold"
           style={{
@@ -198,35 +199,36 @@ const MembershipSection = ({ sendEmail }) => {
             border: "1px solid rgba(255,255,255,0.2)",
           }}
         >
-          <Crown className="w-3.5 h-3.5" /> Monthly Wellness Membership
+          <Crown className="w-3.5 h-3.5" /> Monthly Wellness
         </div>
         <h2
-          className="text-2xl sm:text-4xl font-bold text-white mb-3"
+          className="text-3xl sm:text-4xl font-bold text-white mb-3"
           style={{ fontFamily: "Cormorant Garamond" }}
         >
           Commit to Your Wellbeing
         </h2>
         <p className="text-cyan-200 text-sm max-w-md mx-auto">
-          Choose a monthly plan with 10% off every session. Real commitment,
-          real results.
+          10% off every session. Real commitment, real results.
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         {MEM_PLANS.map((plan) => (
-          <div
+          <button
             key={plan.id}
             onClick={() => setMPlan(plan.id)}
-            className="rounded-2xl p-5 sm:p-6 cursor-pointer ch relative overflow-hidden"
+            className="rounded-3xl p-5 text-left transition-all relative overflow-hidden"
             style={{
               background:
                 mPlan === plan.id
-                  ? "rgba(255,255,255,0.97)"
+                  ? "rgba(255,255,255,0.98)"
                   : "rgba(255,255,255,0.08)",
               border:
                 mPlan === plan.id
                   ? "2px solid #06b6d4"
                   : "2px solid rgba(255,255,255,0.15)",
+              boxShadow:
+                mPlan === plan.id ? "0 12px 32px rgba(6,182,212,0.25)" : "none",
             }}
           >
             <span
@@ -257,7 +259,7 @@ const MembershipSection = ({ sendEmail }) => {
             >
               {plan.desc}
             </p>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2">
               <Calendar
                 className="w-4 h-4"
                 style={{ color: mPlan === plan.id ? "#0891b2" : "#67e8f9" }}
@@ -270,20 +272,15 @@ const MembershipSection = ({ sendEmail }) => {
               </span>
             </div>
             {mPlan === plan.id && mSvc && mDur && (
-              <div
-                className="mt-3 pt-3"
-                style={{ borderTop: "1px solid #e5e7eb" }}
-              >
+              <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-gray-400 line-through">
                     {fmt(plan.sessions * mBase())}
                   </span>
-                  <span className="font-semibold text-emerald-600">
-                    10% OFF
-                  </span>
+                  <span className="font-bold text-emerald-600">10% OFF</span>
                 </div>
                 <p
-                  className="text-xl font-bold"
+                  className="text-2xl font-bold"
                   style={{ color: "#0891b2", fontFamily: "Cormorant Garamond" }}
                 >
                   {fmt(mTotal())}
@@ -293,93 +290,88 @@ const MembershipSection = ({ sendEmail }) => {
                 </p>
               </div>
             )}
-          </div>
+          </button>
         ))}
       </div>
 
       <FC>
         <h4
-          className="font-bold text-gray-900 mb-5"
-          style={{ fontFamily: "Cormorant Garamond", fontSize: "1.1rem" }}
+          className="font-bold text-gray-900 mb-5 text-lg"
+          style={{ fontFamily: "Cormorant Garamond" }}
         >
           Customise Your Plan
         </h4>
         <div className="mb-5">
-          <label className="block text-xs font-semibold text-gray-600 mb-2">
-            Service Location
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+            Location
           </label>
           <div className="grid grid-cols-2 gap-3">
             {[
               { id: "studio", l: "Home Studio" },
               { id: "mobile", l: "Mobile Service" },
             ].map((o) => (
-              <SC
+              <button
                 key={o.id}
-                sel={mSvcType === o.id}
                 onClick={() => setMSvcType(o.id)}
+                className="p-4 rounded-2xl border-2 text-left transition-all"
+                style={{
+                  borderColor: mSvcType === o.id ? "#06b6d4" : "#e5e7eb",
+                  background: mSvcType === o.id ? "#f0f9ff" : "white",
+                }}
               >
-                <span className="font-semibold text-gray-900 text-sm">
-                  {o.l}
-                </span>
-              </SC>
+                <span className="font-bold text-gray-900 text-sm">{o.l}</span>
+              </button>
             ))}
           </div>
         </div>
         <div className="mb-5">
-          <label className="block text-xs font-semibold text-gray-600 mb-2">
-            Choose Massage
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+            Massage
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {SERVICES.map((svc) => (
-              <div
+              <button
                 key={svc.id}
                 onClick={() => setMSvc(svc.id)}
-                className={`p-3 rounded-xl cursor-pointer ch border-2 flex items-center gap-3 ${
-                  mSvc === svc.id
-                    ? "border-cyan-500 bg-cyan-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
+                className="p-3 rounded-2xl border-2 flex items-center gap-3 text-left transition-all"
+                style={{
+                  borderColor: mSvc === svc.id ? "#06b6d4" : "#e5e7eb",
+                  background: mSvc === svc.id ? "#f0f9ff" : "white",
+                }}
               >
                 <span className="text-xl">{svc.icon}</span>
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900 text-sm">
-                    {svc.name}
-                  </p>
-                </div>
+                <span className="font-semibold text-gray-900 text-sm flex-1">
+                  {svc.name}
+                </span>
                 {mSvc === svc.id && <Tick />}
-              </div>
+              </button>
             ))}
           </div>
         </div>
         <div className="mb-5">
-          <label className="block text-xs font-semibold text-gray-600 mb-2">
-            Session Duration
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+            Duration
           </label>
           <div className="grid grid-cols-3 gap-2">
             {durList(mSvc).map((m) => {
               const base = getPrice(mSvcType, mSvc, m),
                 dp = disc10(base);
               return (
-                <div
+                <button
                   key={m}
                   onClick={() => setMDur(m)}
-                  className={`p-3 rounded-xl cursor-pointer ch border-2 text-center ${
-                    mDur === m
-                      ? "border-cyan-500 bg-cyan-50"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
+                  className="p-3 rounded-2xl border-2 text-center transition-all"
+                  style={{
+                    borderColor: mDur === m ? "#06b6d4" : "#e5e7eb",
+                    background: mDur === m ? "#f0f9ff" : "white",
+                  }}
                 >
                   <p className="font-bold text-gray-900 text-sm">{m} min</p>
                   <p className="text-xs text-gray-400 line-through">
                     {fmt(base)}
                   </p>
-                  <p className="text-sm font-bold" style={{ color: "#0891b2" }}>
-                    {fmt(dp)}
-                  </p>
-                  <p className="text-xs text-emerald-600 font-semibold">
-                    10% off
-                  </p>
-                </div>
+                  <p className="text-sm font-bold text-cyan-600">{fmt(dp)}</p>
+                </button>
               );
             })}
           </div>
@@ -399,63 +391,54 @@ const MembershipSection = ({ sendEmail }) => {
           />
         </div>
         <div className="mb-5">
-          <label className="block text-xs font-semibold text-gray-600 mb-2">
-            Email Address *{" "}
-            <span className="font-normal text-gray-400">
-              (for confirmation)
-            </span>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+            Email *
           </label>
           <input
             type="email"
             value={mEmail}
             onChange={(e) => setMEmail(e.target.value)}
             placeholder="your@email.com"
-            className="w-full p-3 rounded-lg text-sm"
-            style={{ border: `2px solid ${mEmail ? "#06b6d4" : "#e5e7eb"}` }}
+            className="w-full p-4 rounded-2xl text-sm border-2 transition-all"
+            style={{
+              borderColor: mEmail ? "#06b6d4" : "#e5e7eb",
+              background: mEmail ? "#f0f9ff" : "white",
+            }}
           />
         </div>
         {mSvc && mDur && (
-          <div
-            className="rounded-xl p-4 mb-5"
-            style={{ background: "#f0f9ff", border: "2px solid #bae6fd" }}
-          >
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm font-semibold text-gray-700">
-                  {MEM_PLANS.find((p) => p.id === mPlan)?.label}
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {planSess()} sessions/month · 10% off per session
-                </p>
-              </div>
-              <div className="text-right">
-                <p
-                  className="text-2xl font-bold"
-                  style={{ fontFamily: "Cormorant Garamond", color: "#0891b2" }}
-                >
-                  {fmt(mTotal())}
-                </p>
-                <p className="text-xs text-gray-400">/month</p>
-              </div>
+          <div className="rounded-2xl p-4 mb-5 bg-cyan-50 border-2 border-cyan-200 flex justify-between items-center">
+            <div>
+              <p className="text-sm font-bold text-gray-800">
+                {MEM_PLANS.find((p) => p.id === mPlan)?.label}
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {planSess()} sessions · 10% off
+              </p>
             </div>
+            <p
+              className="text-2xl font-bold"
+              style={{ fontFamily: "Cormorant Garamond", color: "#0891b2" }}
+            >
+              {fmt(mTotal())}
+            </p>
           </div>
         )}
         <button
           onClick={handleMembership}
           disabled={!mDone}
-          className="w-full py-4 rounded-xl font-bold text-white bg"
+          className="w-full py-4 rounded-2xl font-bold text-sm text-white transition-all"
           style={{
             background: mDone
               ? "linear-gradient(135deg,#0891b2,#06b6d4)"
-              : "#e5e7eb",
-            color: mDone ? "white" : "#9ca3af",
+              : "#d1d5db",
             cursor: mDone ? "pointer" : "not-allowed",
+            boxShadow: mDone ? "0 6px 20px rgba(6,182,212,0.3)" : "none",
           }}
         >
           <Crown className="w-4 h-4 inline mr-2" />
-          Start My Membership →
+          Start My Membership
         </button>
-        <IB text="Secure payment via Paystack. Confirmation sent to you by email. We'll call to schedule." />
       </FC>
 
       {mLoading && (
@@ -466,21 +449,17 @@ const MembershipSection = ({ sendEmail }) => {
             backdropFilter: "blur(6px)",
           }}
         >
-          <div className="bg-white rounded-2xl p-8 text-center shadow-2xl mx-4">
+          <div className="bg-white rounded-3xl p-8 text-center shadow-2xl mx-4">
             <div
+              className="w-14 h-14 rounded-full mx-auto mb-4 animate-spin"
               style={{
-                width: 52,
-                height: 52,
                 border: "3px solid #e5e7eb",
                 borderTopColor: "#06b6d4",
-                borderRadius: "50%",
-                animation: "spin 0.8s linear infinite",
-                margin: "0 auto 16px",
               }}
             />
             <p
               className="font-bold text-gray-900"
-              style={{ fontFamily: "Cormorant Garamond", fontSize: 18 }}
+              style={{ fontFamily: "Cormorant Garamond", fontSize: 20 }}
             >
               Processing…
             </p>
@@ -491,61 +470,48 @@ const MembershipSection = ({ sendEmail }) => {
       {mSuccess && mDetails && (
         <Modal onClose={resetMembership}>
           <div className="text-center mb-5">
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3"
-              style={{ background: "#fef9c3" }}
-            >
+            <div className="w-16 h-16 rounded-full bg-yellow-100 mx-auto flex items-center justify-center mb-3">
               <Crown className="w-8 h-8 text-yellow-500" />
             </div>
+            <h3
+              className="text-2xl font-bold text-gray-900 mb-1"
+              style={{ fontFamily: "Cormorant Garamond" }}
+            >
+              Welcome, Member!
+            </h3>
+            <p className="text-sm text-gray-500">
+              Confirmation sent to <b>{mDetails.email}</b>
+            </p>
           </div>
-          <h3
-            className="text-2xl font-bold text-gray-900 text-center mb-1"
-            style={{ fontFamily: "Cormorant Garamond" }}
-          >
-            Welcome, Member!
-          </h3>
-          <p className="text-center text-sm text-gray-500 mb-5">
-            A confirmation has been sent to <b>{mDetails.email}</b>
-          </p>
           <SBox
             rows={[
               ["Member", mDetails.name],
               ["Plan", mDetails.plan],
               ["Service", mDetails.service],
               ["Location", mDetails.location],
-              ["Sessions/Month", `${mDetails.sessions} sessions`],
+              ["Sessions/Month", `${mDetails.sessions}`],
               ["Monthly", fmt(mDetails.monthlyAmount)],
               ["Ref", mDetails.ref],
             ]}
             hi="Monthly"
           />
-          <div
-            className="flex gap-2 rounded-xl p-3 mb-4 text-xs"
-            style={{
-              background: "#fef9c3",
-              border: "1px solid #fde68a",
-              color: "#92400e",
-            }}
-          >
-            <Crown className="w-4 h-4 flex-shrink-0" />
-            <span>
-              We'll call to schedule your first session and set up your monthly
-              calendar.
-            </span>
-          </div>
-          <Btn
-            color="whatsapp"
+          <button
             onClick={() =>
               sendWA(
-                `Hello Vivify Massage & Spa! 👑\n\nMy membership details:\n👤 Name: ${mDetails.name}\n📱 Phone: ${mDetails.phone}\n✉️ Email: ${mDetails.email}\n📋 Plan: ${mDetails.plan}\n💆 Service: ${mDetails.service}\n📍 Location: ${mDetails.location}\n⏱️ Duration: ${mDetails.duration}\n📅 Sessions: ${mDetails.sessions}/month\n💰 Monthly Fee: ${fmt(mDetails.monthlyAmount)}\n🔗 Ref: ${mDetails.ref}\n\nPlease contact me to schedule my first session. Thank you!`,
+                `Hello Vivify! 👑\n\nMy membership:\n👤 ${mDetails.name}\n📱 ${mDetails.phone}\n📋 ${mDetails.plan}\n💆 ${mDetails.service}\n💰 ${fmt(mDetails.monthlyAmount)}/month\n🔗 ${mDetails.ref}\n\nPlease contact me to schedule.`,
               )
             }
+            className="w-full py-3 rounded-xl font-semibold text-sm text-white mb-2"
+            style={{ background: "#25D366" }}
           >
-            💬 Send Details via WhatsApp
-          </Btn>
-          <Btn color="blue" onClick={resetMembership}>
+            💬 Send via WhatsApp
+          </button>
+          <button
+            onClick={resetMembership}
+            className="w-full py-3 rounded-xl font-semibold text-sm bg-gray-100 text-gray-700"
+          >
             Done
-          </Btn>
+          </button>
         </Modal>
       )}
     </div>
@@ -646,8 +612,8 @@ const GiftCardSection = ({ sendEmail }) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="text-center mb-8 sm:mb-10 px-2">
+    <div className="max-w-2xl mx-auto pb-32 md:pb-16">
+      <div className="text-center mb-8 px-2">
         <div
           className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-4 text-xs font-semibold"
           style={{
@@ -656,22 +622,21 @@ const GiftCardSection = ({ sendEmail }) => {
             border: "1px solid rgba(255,255,255,0.2)",
           }}
         >
-          <Gift className="w-3.5 h-3.5" /> Vivify Spa Gift Card
+          <Gift className="w-3.5 h-3.5" /> Spa Gift Card
         </div>
         <h2
-          className="text-2xl sm:text-4xl font-bold text-white mb-3"
+          className="text-3xl sm:text-4xl font-bold text-white mb-3"
           style={{ fontFamily: "Cormorant Garamond" }}
         >
           Give the Gift of Wellness
         </h2>
         <p className="text-cyan-200 text-sm max-w-md mx-auto">
-          Gift a premium massage experience. We'll personally contact both buyer
-          and recipient.
+          We'll personally contact both buyer and recipient.
         </p>
       </div>
 
       <div
-        className="rounded-2xl p-5 sm:p-6 mb-6 text-white relative overflow-hidden"
+        className="rounded-3xl p-5 mb-6 text-white relative overflow-hidden"
         style={{
           background: "linear-gradient(135deg,#0c4a6e,#0e7490,#164e63)",
           border: "1px solid rgba(255,255,255,0.2)",
@@ -706,7 +671,7 @@ const GiftCardSection = ({ sendEmail }) => {
             A special gift for
           </p>
           <p
-            className="text-xl sm:text-2xl font-bold mb-1"
+            className="text-xl font-bold mb-1"
             style={{ fontFamily: "Cormorant Garamond" }}
           >
             {gRName || "Your Recipient"}
@@ -721,17 +686,12 @@ const GiftCardSection = ({ sendEmail }) => {
                   ? SERVICES.find((s) => s.id === gSvc)?.name
                   : "Select a service"}
               </p>
-              <p className="text-xs" style={{ color: "#bae6fd" }}>
-                {gSvcType === "studio"
-                  ? "Home Studio"
-                  : "Mobile (Home / Hotel)"}
-              </p>
-              <p className="text-xs mt-0.5" style={{ color: "#94a3b8" }}>
+              <p className="text-xs" style={{ color: "#94a3b8" }}>
                 From {gBName || "Your Name"}
               </p>
             </div>
             <p
-              className="text-2xl sm:text-3xl font-bold"
+              className="text-2xl font-bold"
               style={{ fontFamily: "Cormorant Garamond" }}
             >
               {gPrice() ? fmt(gPrice()) : "₦—"}
@@ -742,115 +702,98 @@ const GiftCardSection = ({ sendEmail }) => {
 
       <FC>
         <div className="mb-5">
-          <label className="block text-xs font-semibold text-gray-600 mb-2">
-            Service Location
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+            Location
           </label>
           <div className="grid grid-cols-2 gap-3">
-            <SC
-              sel={gSvcType === "studio"}
+            <button
               onClick={() => setGSvcType("studio")}
+              className="p-4 rounded-2xl border-2 text-left transition-all"
+              style={{
+                borderColor: gSvcType === "studio" ? "#06b6d4" : "#e5e7eb",
+                background: gSvcType === "studio" ? "#f0f9ff" : "white",
+              }}
             >
-              <div className="flex items-center gap-2 mb-0.5">
-                <Building2 className="w-4 h-4 text-gray-400" />
-                <span className="font-bold text-gray-900 text-sm">
-                  Home Studio
-                </span>
-              </div>
-            </SC>
-            <SC
-              sel={gSvcType === "mobile"}
+              <span className="font-bold text-gray-900 text-sm">
+                Home Studio
+              </span>
+            </button>
+            <button
               onClick={() => setGSvcType("mobile")}
+              className="p-4 rounded-2xl border-2 text-left transition-all"
+              style={{
+                borderColor: gSvcType === "mobile" ? "#06b6d4" : "#e5e7eb",
+                background: gSvcType === "mobile" ? "#f0f9ff" : "white",
+              }}
             >
-              <div className="flex items-center gap-2 mb-0.5">
-                <Home className="w-4 h-4 text-gray-400" />
-                <span className="font-bold text-gray-900 text-sm">
-                  Mobile Service
-                </span>
-              </div>
-              <p className="text-xs text-gray-400 mt-0.5">
-                Home or Hotel Service
-              </p>
-            </SC>
+              <span className="font-bold text-gray-900 text-sm">Mobile</span>
+            </button>
           </div>
         </div>
         <div className="mb-5">
-          <label className="block text-xs font-semibold text-gray-600 mb-2">
-            Choose Massage
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+            Massage
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {SERVICES.map((svc) => (
-              <div
+              <button
                 key={svc.id}
                 onClick={() => setGSvc(svc.id)}
-                className={`p-3 rounded-xl cursor-pointer ch border-2 flex items-center gap-3 ${
-                  gSvc === svc.id
-                    ? "border-cyan-500 bg-cyan-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
+                className="p-3 rounded-2xl border-2 flex items-center gap-3 text-left transition-all"
+                style={{
+                  borderColor: gSvc === svc.id ? "#06b6d4" : "#e5e7eb",
+                  background: gSvc === svc.id ? "#f0f9ff" : "white",
+                }}
               >
                 <span className="text-xl">{svc.icon}</span>
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900 text-sm">
-                    {svc.name}
-                  </p>
-                </div>
+                <span className="font-semibold text-gray-900 text-sm flex-1">
+                  {svc.name}
+                </span>
                 {gSvc === svc.id && <Tick />}
-              </div>
+              </button>
             ))}
           </div>
         </div>
         <div className="mb-5">
-          <label className="block text-xs font-semibold text-gray-600 mb-2">
-            Session Duration
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+            Duration
           </label>
           <div className="grid grid-cols-3 gap-2">
-            {durList(gSvc).map((m) => {
-              const p = getPrice(gSvcType, gSvc, m);
-              return (
-                <div
-                  key={m}
-                  onClick={() => setGDur(m)}
-                  className={`p-3 rounded-xl cursor-pointer ch border-2 text-center ${
-                    gDur === m
-                      ? "border-cyan-500 bg-cyan-50"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <p className="font-bold text-gray-900 text-sm">{m} min</p>
-                  <p
-                    className="text-sm font-bold mt-1"
-                    style={{ color: "#0891b2" }}
-                  >
-                    {fmt(p)}
-                  </p>
-                </div>
-              );
-            })}
+            {durList(gSvc).map((m) => (
+              <button
+                key={m}
+                onClick={() => setGDur(m)}
+                className="p-3 rounded-2xl border-2 text-center transition-all"
+                style={{
+                  borderColor: gDur === m ? "#06b6d4" : "#e5e7eb",
+                  background: gDur === m ? "#f0f9ff" : "white",
+                }}
+              >
+                <p className="font-bold text-gray-900 text-sm">{m} min</p>
+                <p className="text-sm font-bold text-cyan-600 mt-1">
+                  {fmt(getPrice(gSvcType, gSvc, m))}
+                </p>
+              </button>
+            ))}
           </div>
         </div>
         <div className="mb-6">
-          <label className="block text-xs font-semibold text-gray-600 mb-2">
-            Personal Message{" "}
-            <span className="font-normal text-gray-400">(optional)</span>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+            Personal Message
           </label>
           <textarea
             value={gCaption}
             onChange={(e) => setGCaption(e.target.value)}
             rows={3}
-            placeholder="Write something personal for the recipient…"
-            className="w-full p-3 rounded-lg text-sm resize-none"
-            style={{ border: "2px solid #e5e7eb" }}
+            placeholder="Write something personal…"
+            className="w-full p-4 rounded-2xl text-sm resize-none border-2 border-gray-200 focus:border-cyan-500 transition-all"
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
           <div>
-            <h5
-              className="font-bold text-gray-800 mb-3 flex items-center gap-2 text-sm pb-2"
-              style={{ borderBottom: "1px solid #f3f4f6" }}
-            >
-              <User className="w-4 h-4 text-cyan-600" />
-              You (Buying)
-            </h5>
+            <p className="font-bold text-gray-800 mb-3 text-sm pb-2 border-b border-gray-100">
+              🎁 You (Buying)
+            </p>
             <div className="space-y-3">
               <TF
                 label="Full Name *"
@@ -865,7 +808,7 @@ const GiftCardSection = ({ sendEmail }) => {
                 onChange={(v) => onPhone(v, setGBPhone, setGBPhoneErr)}
               />
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Email *
                 </label>
                 <input
@@ -873,22 +816,18 @@ const GiftCardSection = ({ sendEmail }) => {
                   value={gBEmail}
                   onChange={(e) => setGBEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="w-full p-3 rounded-lg text-sm"
+                  className="w-full p-3 rounded-xl text-sm border-2 transition-all"
                   style={{
-                    border: `2px solid ${gBEmail ? "#06b6d4" : "#e5e7eb"}`,
+                    borderColor: gBEmail ? "#06b6d4" : "#e5e7eb",
                   }}
                 />
               </div>
             </div>
           </div>
           <div>
-            <h5
-              className="font-bold text-gray-800 mb-3 flex items-center gap-2 text-sm pb-2"
-              style={{ borderBottom: "1px solid #fce7f3" }}
-            >
-              <Gift className="w-4 h-4 text-pink-500" />
-              Recipient
-            </h5>
+            <p className="font-bold text-gray-800 mb-3 text-sm pb-2 border-b border-pink-100">
+              💝 Recipient
+            </p>
             <div className="space-y-3">
               <TF
                 label="Full Name *"
@@ -901,10 +840,9 @@ const GiftCardSection = ({ sendEmail }) => {
                 value={gRPhone}
                 error={gRPhoneErr}
                 onChange={(v) => onPhone(v, setGRPhone, setGRPhoneErr)}
-                placeholder="08012345678"
               />
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Email
                 </label>
                 <input
@@ -912,9 +850,9 @@ const GiftCardSection = ({ sendEmail }) => {
                   value={gREmail}
                   onChange={(e) => setGREmail(e.target.value)}
                   placeholder="recipient@email.com"
-                  className="w-full p-3 rounded-lg text-sm"
+                  className="w-full p-3 rounded-xl text-sm border-2 transition-all"
                   style={{
-                    border: `2px solid ${gREmail ? "#06b6d4" : "#e5e7eb"}`,
+                    borderColor: gREmail ? "#06b6d4" : "#e5e7eb",
                   }}
                 />
               </div>
@@ -922,55 +860,39 @@ const GiftCardSection = ({ sendEmail }) => {
           </div>
         </div>
         <p className="text-xs text-gray-400 mb-5">
-          * Provide at least one contact for the recipient (phone or email) so
-          we can deliver their gift.
+          * Provide at least one contact for the recipient (phone or email).
         </p>
         {gSvc && gPrice() > 0 && (
-          <div
-            className="rounded-xl p-4 mb-5"
-            style={{ background: "#fdf2f8", border: "2px solid #fbcfe8" }}
-          >
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm font-semibold text-gray-700">
-                  Spa Gift Card Value
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {SERVICES.find((s) => s.id === gSvc)?.name} ·{" "}
-                  {gSvcType === "studio" ? "Home Studio" : "Mobile Service"}
-                </p>
-              </div>
-              <p
-                className="text-2xl font-bold"
-                style={{ fontFamily: "Cormorant Garamond", color: "#db2777" }}
-              >
-                {fmt(gPrice())}
+          <div className="rounded-2xl p-4 mb-5 bg-pink-50 border-2 border-pink-200 flex justify-between items-center">
+            <div>
+              <p className="text-sm font-bold text-gray-800">Gift Card Value</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {SERVICES.find((s) => s.id === gSvc)?.name}
               </p>
             </div>
+            <p
+              className="text-2xl font-bold"
+              style={{ fontFamily: "Cormorant Garamond", color: "#db2777" }}
+            >
+              {fmt(gPrice())}
+            </p>
           </div>
         )}
         <button
           onClick={handleGift}
           disabled={!gDone}
-          className="w-full py-4 rounded-xl font-bold text-white bg"
+          className="w-full py-4 rounded-2xl font-bold text-sm text-white transition-all"
           style={{
             background: gDone
               ? "linear-gradient(135deg,#db2777,#ec4899)"
-              : "#e5e7eb",
-            color: gDone ? "white" : "#9ca3af",
+              : "#d1d5db",
             cursor: gDone ? "pointer" : "not-allowed",
+            boxShadow: gDone ? "0 6px 20px rgba(219,39,119,0.3)" : "none",
           }}
         >
           <Gift className="w-4 h-4 inline mr-2" />
-          Purchase Spa Gift Card →
+          Purchase Gift Card
         </button>
-        <div className="flex items-center justify-center gap-2 text-xs text-gray-400 mt-3">
-          <Shield className="w-3.5 h-3.5" />
-          <span>
-            Secure via Paystack · Confirmation emails sent to buyer
-            {gREmail ? " and recipient" : ""}
-          </span>
-        </div>
       </FC>
 
       {gLoading && (
@@ -981,21 +903,17 @@ const GiftCardSection = ({ sendEmail }) => {
             backdropFilter: "blur(6px)",
           }}
         >
-          <div className="bg-white rounded-2xl p-8 text-center shadow-2xl mx-4">
+          <div className="bg-white rounded-3xl p-8 text-center shadow-2xl mx-4">
             <div
+              className="w-14 h-14 rounded-full mx-auto mb-4 animate-spin"
               style={{
-                width: 52,
-                height: 52,
                 border: "3px solid #e5e7eb",
-                borderTopColor: "#06b6d4",
-                borderRadius: "50%",
-                animation: "spin 0.8s linear infinite",
-                margin: "0 auto 16px",
+                borderTopColor: "#db2777",
               }}
             />
             <p
               className="font-bold text-gray-900"
-              style={{ fontFamily: "Cormorant Garamond", fontSize: 18 }}
+              style={{ fontFamily: "Cormorant Garamond", fontSize: 20 }}
             >
               Processing…
             </p>
@@ -1005,111 +923,45 @@ const GiftCardSection = ({ sendEmail }) => {
 
       {gSuccess && gDetails && (
         <Modal onClose={resetGift}>
-          <div className="text-center mb-4">
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3"
-              style={{ background: "#fce7f3" }}
-            >
+          <div className="text-center mb-5">
+            <div className="w-16 h-16 rounded-full bg-pink-100 mx-auto flex items-center justify-center mb-3">
               <Gift className="w-8 h-8 text-pink-500" />
             </div>
-          </div>
-          <h3
-            className="text-2xl font-bold text-gray-900 text-center mb-1"
-            style={{ fontFamily: "Cormorant Garamond" }}
-          >
-            Spa Gift Card Sent! 🎁
-          </h3>
-          <p className="text-center text-sm text-gray-500 mb-4">
-            Confirmation sent to {gDetails.buyerEmail}
-            {gDetails.recipientEmail ? ` and ${gDetails.recipientEmail}` : ""}
-          </p>
-          <div
-            className="rounded-2xl p-5 mb-4 text-white relative overflow-hidden"
-            style={{ background: "linear-gradient(135deg,#0c4a6e,#0e7490)" }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-                width: 80,
-                height: 80,
-                borderRadius: "50%",
-                background: "rgba(255,255,255,0.08)",
-                transform: "translate(30%,-30%)",
-              }}
-            />
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-4 h-4 text-cyan-300" />
-              <span
-                className="font-bold text-sm"
-                style={{ fontFamily: "Cormorant Garamond" }}
-              >
-                Vivify Massage & Spa
-              </span>
-            </div>
-            <p
-              className="text-lg font-bold mb-1"
+            <h3
+              className="text-2xl font-bold text-gray-900 mb-1"
               style={{ fontFamily: "Cormorant Garamond" }}
             >
-              For {gDetails.recipientName}
+              Gift Card Sent! 🎁
+            </h3>
+            <p className="text-sm text-gray-500">
+              Confirmation sent to {gDetails.buyerEmail}
             </p>
-            <p className="text-xs italic mb-4" style={{ color: "#bae6fd" }}>
-              "{gDetails.caption}"
-            </p>
-            <div className="flex justify-between items-end">
-              <div>
-                <p className="text-xs" style={{ color: "#bae6fd" }}>
-                  {gDetails.service}
-                </p>
-                <p className="text-xs" style={{ color: "#94a3b8" }}>
-                  From {gDetails.buyerName}
-                </p>
-              </div>
-              <p
-                className="text-2xl font-bold"
-                style={{ fontFamily: "Cormorant Garamond" }}
-              >
-                {fmt(gDetails.amount)}
-              </p>
-            </div>
           </div>
           <SBox
             rows={[
               ["Ref", gDetails.ref],
-              ["Buyer", gDetails.buyerName],
               ["Recipient", gDetails.recipientName],
               ["Value", fmt(gDetails.amount)],
             ]}
             hi="Value"
           />
-          <div
-            className="flex gap-2 rounded-xl p-3 mb-4 text-xs"
-            style={{
-              background: "#fce7f3",
-              border: "1px solid #fbcfe8",
-              color: "#9d174d",
-            }}
-          >
-            <Phone className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <span>
-              We'll contact {gDetails.buyerName} to confirm and reach out to{" "}
-              {gDetails.recipientName} with their gift.
-            </span>
-          </div>
-          <Btn
-            color="whatsapp"
+          <button
             onClick={() =>
               sendWA(
-                `Hello Vivify Massage & Spa! 🎁\n\nGift card purchase details:\n👤 Buyer: ${gDetails.buyerName}\n📱 Buyer Phone: ${gDetails.buyerPhone}\n🎁 Recipient: ${gDetails.recipientName}\n💆 Service: ${gDetails.service}\n📍 Location: ${gDetails.location}\n⏱️ Duration: ${gDetails.duration}\n💰 Value: ${fmt(gDetails.amount)}\n💬 Message: "${gDetails.caption}"\n🔗 Ref: ${gDetails.ref}\n\nPlease contact the recipient to coordinate their session. Thank you!`,
+                `Hello Vivify! 🎁\n\nGift card:\n👤 Buyer: ${gDetails.buyerName}\n🎁 Recipient: ${gDetails.recipientName}\n💆 ${gDetails.service}\n💰 ${fmt(gDetails.amount)}\n💬 "${gDetails.caption}"\n🔗 ${gDetails.ref}`,
               )
             }
+            className="w-full py-3 rounded-xl font-semibold text-sm text-white mb-2"
+            style={{ background: "#25D366" }}
           >
-            💬 Send Details via WhatsApp
-          </Btn>
-          <Btn color="pink" onClick={resetGift}>
+            💬 Send via WhatsApp
+          </button>
+          <button
+            onClick={resetGift}
+            className="w-full py-3 rounded-xl font-semibold text-sm bg-gray-100 text-gray-700"
+          >
             Done
-          </Btn>
+          </button>
         </Modal>
       )}
     </div>
@@ -1122,21 +974,13 @@ const GiftCardSection = ({ sendEmail }) => {
 const VivifySpaWebsite = () => {
   const [activeTab, setActiveTab] = useState("booking");
 
-  // ───────────────────────────────────────────────────────────────────────
-  // Paystack inline script.
-  // NOTE: no cleanup — leaving the script attached forever avoids the
-  // StrictMode double-mount churn (mount → unmount → mount) that would
-  // otherwise remove and re-add the script and leave window.PaystackPop
-  // undefined when the user hits "Pay".
-  // ───────────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (window.PaystackPop) return; // already loaded
-    if (document.querySelector('script[src*="paystack"]')) return; // loading
+    if (window.PaystackPop) return;
+    if (document.querySelector('script[src*="paystack"]')) return;
     const s = document.createElement("script");
     s.src = "https://js.paystack.co/v1/inline.js";
     s.async = true;
     document.head.appendChild(s);
-    // intentionally no cleanup
   }, []);
 
   const sendEmail = async (type, data) => {
@@ -1158,12 +1002,10 @@ const VivifySpaWebsite = () => {
   const scrollTo = (id) =>
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
-  const TABS = [
-    ["booking", "📅 Book Session"],
-    ["sports", "🏃 Sports Massage"],
-    ["membership", "👑 Membership"],
-    ["giftcard", "🎁 Spa Gift Card"],
-  ];
+  const switchTab = (id) => {
+    setActiveTab(id);
+    scrollTo("main");
+  };
 
   const hideHero = activeTab === "sports";
 
@@ -1174,118 +1016,146 @@ const VivifySpaWebsite = () => {
         background:
           "linear-gradient(160deg,#0c4a6e 0%,#0e7490 40%,#164e63 100%)",
         backgroundAttachment: "fixed",
-        fontFamily: "'DM Sans',sans-serif",
+        fontFamily: "'DM Sans',system-ui,sans-serif",
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&display=swap');
-        @keyframes scale-in { from{opacity:0;transform:scale(0.94) translateY(10px)} to{opacity:1;transform:scale(1) translateY(0)} }
-        @keyframes spin      { to{transform:rotate(360deg)} }
-        @keyframes slideInFwd{ from{opacity:0;transform:translateX(38px)} to{opacity:1;transform:translateX(0)} }
-        @keyframes slideInBck{ from{opacity:0;transform:translateX(-38px)} to{opacity:1;transform:translateX(0)} }
-        .m-enter { animation:scale-in 0.25s cubic-bezier(.16,1,.3,1) }
-        .sfwd    { animation:slideInFwd 0.28s cubic-bezier(.16,1,.3,1) }
-        .sbck    { animation:slideInBck 0.28s cubic-bezier(.16,1,.3,1) }
-        .ch  { transition:all 0.2s ease } .ch:hover  { transform:translateY(-2px) }
-        .bg  { transition:all 0.18s ease} .bg:hover  { transform:translateY(-1px);box-shadow:0 8px 24px rgba(6,182,212,0.4) }
-        .tp  { transition:all 0.2s ease }
-        input,textarea,select { outline:none }
-        input[type=date]::-webkit-calendar-picker-indicator { opacity:0.6;cursor:pointer }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=Cormorant+Garamond:wght@400;500;600;700&display=swap');
+        @keyframes spin { to{transform:rotate(360deg)} }
+        .no-scrollbar::-webkit-scrollbar{display:none}
+        .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+        input,textarea,select,button { outline:none; font-family:inherit }
+        button { -webkit-tap-highlight-color:transparent }
         * { box-sizing:border-box }
+        @media (max-width:768px){
+          input, textarea, select { font-size: 16px !important; }
+        }
       `}</style>
 
-      {/* ── Header ── */}
+      {/* ═══════════════════════════════════════════════════════ */}
+      {/* DESKTOP HEADER                                          */}
+      {/* ═══════════════════════════════════════════════════════ */}
       <header
-        className="sticky top-0 z-40"
+        className="hidden md:block sticky top-0 z-40"
         style={{
-          background: "rgba(12,74,110,0.96)",
-          backdropFilter: "blur(14px)",
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
+          background: "rgba(12,74,110,0.85)",
+          backdropFilter: "blur(20px)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
         }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-6">
+          {/* Logo */}
+          <div className="flex items-center gap-3 flex-shrink-0">
             <div
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg,#0891b2,#06b6d4)" }}
-            >
-              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-            </div>
-            <h1
-              className="text-base sm:text-xl font-bold text-white"
-              style={{ fontFamily: "Cormorant Garamond" }}
-            >
-              Vivify Massage & Spa
-            </h1>
-          </div>
-
-          <div
-            className="hidden md:flex items-center gap-1 rounded-xl p-1"
-            style={{ background: "rgba(255,255,255,0.1)" }}
-          >
-            {TABS.map(([id, label]) => (
-              <button
-                key={id}
-                onClick={() => {
-                  setActiveTab(id);
-                  scrollTo("main");
-                }}
-                className="px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold tp"
-                style={{
-                  background: activeTab === id ? "white" : "transparent",
-                  color:
-                    activeTab === id ? "#0891b2" : "rgba(255,255,255,0.85)",
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={() => {
-              setActiveTab("booking");
-              scrollTo("main");
-            }}
-            className="md:hidden text-white px-3 py-2 rounded-lg font-semibold text-xs bg"
-            style={{ background: "linear-gradient(135deg,#0891b2,#06b6d4)" }}
-          >
-            Book Now
-          </button>
-        </div>
-
-        {/* Mobile tab strip */}
-        <div
-          className="md:hidden flex overflow-x-auto"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}
-        >
-          {TABS.map(([id, label]) => (
-            <button
-              key={id}
-              onClick={() => {
-                setActiveTab(id);
-                scrollTo("main");
-              }}
-              className="flex-shrink-0 px-4 py-2 text-xs font-semibold tp"
+              className="w-10 h-10 rounded-2xl flex items-center justify-center"
               style={{
-                background:
-                  activeTab === id ? "rgba(255,255,255,0.12)" : "transparent",
-                color: activeTab === id ? "white" : "rgba(255,255,255,0.55)",
-                borderBottom:
-                  activeTab === id
-                    ? "2px solid #06b6d4"
-                    : "2px solid transparent",
+                background: "linear-gradient(135deg,#0891b2,#06b6d4)",
+                boxShadow: "0 8px 20px rgba(6,182,212,0.35)",
               }}
             >
-              {label}
-            </button>
-          ))}
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1
+                className="text-lg font-bold text-white leading-tight"
+                style={{ fontFamily: "Cormorant Garamond" }}
+              >
+                Vivify Massage & Spa
+              </h1>
+              <p className="text-xs text-cyan-200 leading-tight">
+                Relax · Restore · Renew
+              </p>
+            </div>
+          </div>
+
+          <div className="flex-1" />
+
+          {/* Pills */}
+          <nav
+            className="flex items-center gap-1 p-1 rounded-2xl"
+            style={{ background: "rgba(255,255,255,0.08)" }}
+          >
+            {TABS.map((t) => {
+              const active = activeTab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => switchTab(t.id)}
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2"
+                  style={{
+                    background: active
+                      ? "linear-gradient(135deg,#0891b2,#06b6d4)"
+                      : "transparent",
+                    color: active ? "white" : "rgba(255,255,255,0.75)",
+                    boxShadow: active
+                      ? "0 6px 16px rgba(6,182,212,0.4)"
+                      : "none",
+                  }}
+                >
+                  <span>{t.icon}</span>
+                  {t.full}
+                </button>
+              );
+            })}
+          </nav>
         </div>
       </header>
 
-      {/* ── Hero (hidden for Sports Massage) ── */}
+      {/* ═══════════════════════════════════════════════════════ */}
+      {/* MOBILE HEADER                                           */}
+      {/* ═══════════════════════════════════════════════════════ */}
+      <header
+        className="md:hidden sticky top-0 z-40"
+        style={{
+          background: "rgba(12,74,110,0.9)",
+          backdropFilter: "blur(20px)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{
+                background: "linear-gradient(135deg,#0891b2,#06b6d4)",
+                boxShadow: "0 6px 16px rgba(6,182,212,0.35)",
+              }}
+            >
+              <Sparkles className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h1
+                className="text-base font-bold text-white leading-tight"
+                style={{ fontFamily: "Cormorant Garamond" }}
+              >
+                Vivify
+              </h1>
+              <p className="text-xs text-cyan-200 leading-tight -mt-0.5">
+                Massage & Spa
+              </p>
+            </div>
+          </div>
+          <a
+            href={`https://wa.me/${WA_NUMBER}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-semibold px-3 py-2 rounded-xl"
+            style={{
+              background: "rgba(255,255,255,0.1)",
+              color: "white",
+              border: "1px solid rgba(255,255,255,0.15)",
+            }}
+          >
+            💬 Help
+          </a>
+        </div>
+      </header>
+
+      {/* ═══════════════════════════════════════════════════════ */}
+      {/* HERO (hidden for sports)                                */}
+      {/* ═══════════════════════════════════════════════════════ */}
       {!hideHero && (
-        <section className="py-12 sm:py-20 relative overflow-hidden">
+        <section className="py-10 sm:py-16 relative overflow-hidden">
           <div
             style={{
               position: "absolute",
@@ -1295,98 +1165,73 @@ const VivifySpaWebsite = () => {
                 "radial-gradient(circle at 20% 80%,#fff 0%,transparent 50%),radial-gradient(circle at 80% 20%,#fff 0%,transparent 50%)",
             }}
           />
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center relative z-10">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center relative z-10">
             <div
-              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-5 text-xs font-semibold"
+              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-4 text-xs font-semibold"
               style={{
                 background: "rgba(255,255,255,0.15)",
                 color: "#bae6fd",
                 border: "1px solid rgba(255,255,255,0.2)",
               }}
             >
-              <Star className="w-3.5 h-3.5" fill="currentColor" /> Where
-              Recovery Meets Convenience
+              <Star className="w-3.5 h-3.5" fill="currentColor" />
+              Where Recovery Meets Convenience
             </div>
             <h2
-              className="text-3xl sm:text-5xl lg:text-6xl font-bold text-white mb-4"
-              style={{ fontFamily: "Cormorant Garamond", lineHeight: 1.1 }}
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4"
+              style={{ fontFamily: "Cormorant Garamond", lineHeight: 1.05 }}
             >
               Relax. Restore.
               <br />
               <span style={{ color: "#67e8f9" }}>Renew.</span>
             </h2>
             <p
-              className="text-sm sm:text-lg mb-8 max-w-xl mx-auto px-4"
+              className="text-sm sm:text-lg max-w-md mx-auto px-4"
               style={{ color: "#bae6fd" }}
             >
               Expert massage therapy — at our studio or your doorstep.
             </p>
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 px-4">
-              {[
-                ["📅 Book a Session", "booking"],
-                ["🏃 Sports Massage", "sports"],
-                ["👑 Monthly Membership", "membership"],
-                ["🎁 Spa Gift Card", "giftcard"],
-              ].map(([label, tab]) => (
-                <button
-                  key={tab}
-                  onClick={() => {
-                    setActiveTab(tab);
-                    scrollTo("main");
-                  }}
-                  className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm bg"
-                  style={{
-                    background:
-                      activeTab === tab ? "white" : "rgba(255,255,255,0.15)",
-                    color: activeTab === tab ? "#0891b2" : "white",
-                    border: "1px solid rgba(255,255,255,0.3)",
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
           </div>
         </section>
       )}
 
-      {/* ── Main content ── */}
+      {/* ═══════════════════════════════════════════════════════ */}
+      {/* MAIN CONTENT                                            */}
+      {/* ═══════════════════════════════════════════════════════ */}
       <div id="main">
         {activeTab === "booking" && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
+          <div className="px-4 sm:px-6">
             <BookingWizard />
           </div>
         )}
 
-        {activeTab === "sports" && (
-          <div className="pb-16">
-            <SportsMassage />
-          </div>
-        )}
+        {activeTab === "sports" && <SportsMassage />}
 
         {activeTab === "membership" && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
+          <div className="px-4 sm:px-6">
             <MembershipSection sendEmail={sendEmail} />
           </div>
         )}
 
         {activeTab === "giftcard" && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
+          <div className="px-4 sm:px-6">
             <GiftCardSection sendEmail={sendEmail} />
           </div>
         )}
       </div>
 
-      {/* ── Testimonials ── */}
+      {/* ═══════════════════════════════════════════════════════ */}
+      {/* TESTIMONIALS + FOOTER                                   */}
+      {/* ═══════════════════════════════════════════════════════ */}
       <section
-        className="py-12 sm:py-20"
+        className="py-12 sm:py-16 mt-8"
         style={{
-          background: "rgba(255,255,255,0.05)",
+          background: "rgba(255,255,255,0.03)",
           backdropFilter: "blur(4px)",
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-8 sm:mb-10">
+          <div className="text-center mb-8">
             <h3
               className="text-2xl sm:text-3xl font-bold text-white"
               style={{ fontFamily: "Cormorant Garamond" }}
@@ -1394,7 +1239,7 @@ const VivifySpaWebsite = () => {
               What Our Clients Say
             </h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
               {
                 name: "Abu M.",
@@ -1414,10 +1259,10 @@ const VivifySpaWebsite = () => {
             ].map((t, i) => (
               <div
                 key={i}
-                className="rounded-2xl p-5 sm:p-6"
+                className="rounded-3xl p-5"
                 style={{
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.15)",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.12)",
                 }}
               >
                 <div className="flex gap-0.5 mb-3">
@@ -1444,14 +1289,16 @@ const VivifySpaWebsite = () => {
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="py-10 sm:py-14" style={{ background: "#0c1a2e" }}>
+      <footer
+        className="py-10 sm:py-14 pb-32 md:pb-14"
+        style={{ background: "#0c1a2e" }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7 sm:gap-8 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center"
                   style={{
                     background: "linear-gradient(135deg,#0891b2,#06b6d4)",
                   }}
@@ -1466,8 +1313,7 @@ const VivifySpaWebsite = () => {
                 </h4>
               </div>
               <p style={{ color: "#6b7280", fontSize: "0.875rem" }}>
-                Your sanctuary for relaxation and rejuvenation. Book online or
-                call us today.
+                Your sanctuary for relaxation and rejuvenation.
               </p>
             </div>
             <div>
@@ -1492,7 +1338,7 @@ const VivifySpaWebsite = () => {
                     style={{ color: "#06b6d4", flexShrink: 0 }}
                   />
                   <div>
-                    <p className="font-semibold text-white">Studio Location</p>
+                    <p className="font-semibold text-white">Studio</p>
                     <p>Ewa Block Industry, Alao Farm, Tanke Akata.</p>
                   </div>
                 </div>
@@ -1506,15 +1352,11 @@ const VivifySpaWebsite = () => {
               >
                 <div className="flex justify-between">
                   <span>Studio</span>
-                  <span className="font-semibold text-white">
-                    9:00 AM – 6:00 PM
-                  </span>
+                  <span className="font-semibold text-white">9 AM – 6 PM</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Mobile</span>
-                  <span className="font-semibold text-white">
-                    7:00 AM – 12:00 AM
-                  </span>
+                  <span className="font-semibold text-white">7 AM – 12 AM</span>
                 </div>
               </div>
             </div>
@@ -1528,10 +1370,62 @@ const VivifySpaWebsite = () => {
             }}
           >
             <p>© 2026 Vivify Massage & Spa. All rights reserved.</p>
-            <p>Payment processing by Paystack</p>
+            <p>Payment via Paystack</p>
           </div>
         </div>
       </footer>
+
+      {/* ═══════════════════════════════════════════════════════ */}
+      {/* MOBILE BOTTOM NAV (fixed)                               */}
+      {/* ═══════════════════════════════════════════════════════ */}
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50"
+        style={{
+          background: "rgba(12,74,110,0.95)",
+          backdropFilter: "blur(20px)",
+          borderTop: "1px solid rgba(255,255,255,0.1)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
+      >
+        <div className="grid grid-cols-4">
+          {TABS.map((t) => {
+            const active = activeTab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => switchTab(t.id)}
+                className="py-3 flex flex-col items-center gap-1 transition-all relative"
+                style={{
+                  color: active ? "white" : "rgba(255,255,255,0.5)",
+                }}
+              >
+                {active && (
+                  <div
+                    className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-8 rounded-full"
+                    style={{
+                      background: "linear-gradient(90deg,#0891b2,#06b6d4)",
+                    }}
+                  />
+                )}
+                <span
+                  className="text-xl transition-transform"
+                  style={{
+                    transform: active ? "scale(1.15)" : "scale(1)",
+                  }}
+                >
+                  {t.icon}
+                </span>
+                <span
+                  className="text-xs font-semibold"
+                  style={{ fontSize: "0.65rem" }}
+                >
+                  {t.short}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 };
