@@ -97,14 +97,6 @@ export const THERAPISTS = [
   },
 ];
 
-// ─────────────────────────────────────────────────────────────
-// Sports Massage therapists.
-//
-// Add a new therapist by appending to this array — the info card
-// in SportsMassage.jsx reads from here and updates its copy
-// automatically. Flip `available: false` to hide someone without
-// deleting them.
-// ─────────────────────────────────────────────────────────────
 export const SPORTS_THERAPISTS = [
   {
     id: "male-specialist",
@@ -113,14 +105,6 @@ export const SPORTS_THERAPISTS = [
     role: "Certified Sports & Recovery Therapist",
     available: true,
   },
-  // ── Future: uncomment + edit when you add a female sports therapist ──
-  // {
-  //   id: "female-specialist",
-  //   name: "Female Specialist",
-  //   gender: "female",
-  //   role: "Certified Sports & Recovery Therapist",
-  //   available: true,
-  // },
 ];
 
 export const STUDIO_SLOTS = [
@@ -157,24 +141,42 @@ export const MOBILE_SLOTS = [
   "12:00 AM",
 ];
 
-export const MEM_PLANS = [
-  {
-    id: "relaxation",
-    label: "Relaxation Duo",
-    sessions: 2,
-    icon: "🌿",
-    tag: "Self-Care",
-    desc: "Two soothing sessions per month — Swedish, Deep Tissue, or Full Body.",
-  },
-  {
-    id: "pro-athlete",
-    label: "Pro / Athlete Recovery",
-    sessions: 2,
-    icon: "⚡",
-    tag: "Performance",
-    desc: "Two targeted recovery sessions per month for athletes and busy professionals.",
-  },
-];
+// ─────────────────────────────────────────────────────────────
+// MEMBERSHIP — single monthly plan
+//
+// One massage per month. Aimed at retention clients who want
+// a consistent self-care rhythm without committing to bulk.
+// ─────────────────────────────────────────────────────────────
+export const MEMBERSHIP_PLAN = {
+  id: "monthly-essential",
+  name: "Monthly Essential",
+  tagline: "One massage a month. Every month.",
+  sessions: 1,
+  icon: "🌿",
+  discountRate: 0.1, // 10% off the base session price
+  benefits: [
+    {
+      icon: "💆",
+      text: "1 massage of your choice, every month",
+    },
+    {
+      icon: "💸",
+      text: "10% off every session — applied automatically",
+    },
+    {
+      icon: "⚡",
+      text: "Priority booking — front of the queue",
+    },
+    {
+      icon: "🧑‍⚕️",
+      text: "Same trusted therapist whenever available",
+    },
+    {
+      icon: "⏸️",
+      text: "Pause or cancel anytime — no lock-in",
+    },
+  ],
+};
 
 export const SPORTS_TECHNIQUES = [
   {
@@ -221,18 +223,11 @@ export const maxStr = () => {
   return d.toISOString().split("T")[0];
 };
 
-// ─────────────────────────────────────────────────────────────
-// Location labels — single source of truth so we never miss one
-// ─────────────────────────────────────────────────────────────
 export const LOCATION_LABEL = {
   studio: "Our Home Studio",
   mobile: "Your Home or Hotel",
 };
 
-// ─────────────────────────────────────────────────────────────
-// Sports therapist copy helper — derives the info card text
-// from the SPORTS_THERAPISTS array. Add a female → copy updates.
-// ─────────────────────────────────────────────────────────────
 export const getSportsTherapistInfo = () => {
   const available = SPORTS_THERAPISTS.filter((t) => t.available);
   const hasMale = available.some((t) => t.gender === "male");

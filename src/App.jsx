@@ -3,27 +3,31 @@ import {
   Phone,
   MapPin,
   Sparkles,
-  Home,
-  Building2,
-  User,
   Shield,
   Star,
   Gift,
   Crown,
-  Calendar,
+  Check,
+  Heart,
+  Repeat,
+  Zap,
+  UserCheck,
+  Pause,
+  Wallet,
+  Percent,
 } from "lucide-react";
 
 import {
-  PRICING,
   SERVICES,
-  MEM_PLANS,
+  MEMBERSHIP_PLAN,
   fmt,
   disc10,
   getPrice,
   durList,
+  LOCATION_LABEL,
 } from "./config/services";
 
-import { Tick, IB, TF, PF, SC, Modal, Btn } from "./components/ui";
+import { Tick, TF, PF, Modal } from "./components/ui";
 
 import BookingWizard from "./components/BookingWizard";
 import SportsMassage from "./components/SportsMassage";
@@ -31,9 +35,6 @@ import SportsMassage from "./components/SportsMassage";
 const PAYSTACK_KEY = "pk_live_915663b76742c16f999c99e6251596ee7c5c9584";
 const WA_NUMBER = "2347040723894";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Tab definitions — used by both desktop header and mobile bottom nav
-// ─────────────────────────────────────────────────────────────────────────────
 const TABS = [
   { id: "booking", icon: "📅", short: "Book", full: "Book Session" },
   { id: "sports", icon: "🏃", short: "Sports", full: "Sports Massage" },
@@ -74,7 +75,7 @@ const sendWA = (msg) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Micro components
+// MICRO COMPONENTS
 // ─────────────────────────────────────────────────────────────────────────────
 const FC = ({ children }) => (
   <div
@@ -108,13 +109,14 @@ const SBox = ({ rows, hi }) => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MEMBERSHIP SECTION
+// MEMBERSHIP — single monthly plan
 // ─────────────────────────────────────────────────────────────────────────────
 const MembershipSection = ({ sendEmail }) => {
+  const plan = MEMBERSHIP_PLAN;
+
   const [mSvcType, setMSvcType] = useState("studio");
   const [mSvc, setMSvc] = useState("");
   const [mDur, setMDur] = useState("");
-  const [mPlan, setMPlan] = useState("relaxation");
   const [mName, setMName] = useState("");
   const [mPhone, setMPhone] = useState("");
   const [mEmail, setMEmail] = useState("");
@@ -124,8 +126,8 @@ const MembershipSection = ({ sendEmail }) => {
   const [mDetails, setMDetails] = useState(null);
 
   const mBase = () => getPrice(mSvcType, mSvc, mDur);
-  const planSess = () => MEM_PLANS.find((p) => p.id === mPlan)?.sessions || 2;
-  const mTotal = () => planSess() * disc10(mBase());
+  const mTotal = () => disc10(mBase());
+  const mSaved = () => mBase() - mTotal();
   const mDone = !!(
     mSvc &&
     mSvcType &&
@@ -147,26 +149,26 @@ const MembershipSection = ({ sendEmail }) => {
     }
     setMLoading(true);
     const svcObj = SERVICES.find((s) => s.id === mSvc);
-    const plan = MEM_PLANS.find((p) => p.id === mPlan);
     const data = {
       name: mName,
       phone: mPhone,
       email: mEmail,
-      plan: plan?.label,
+      plan: plan.name,
       service: svcObj?.name,
-      location: mSvcType === "studio" ? "Home Studio" : "Mobile Service",
+      location: LOCATION_LABEL[mSvcType],
       duration: `${mDur} minutes`,
-      sessions: planSess(),
+      sessions: plan.sessions,
       normalPrice: mBase(),
-      discountedPerSession: disc10(mBase()),
+      discountedPerSession: mTotal(),
       monthlyAmount: mTotal(),
+      savedPerMonth: mSaved(),
     };
     paystackPay({
       amount: mTotal(),
       email: mEmail,
       meta: [
         { display_name: "Member", variable_name: "member", value: mName },
-        { display_name: "Plan", variable_name: "plan", value: plan?.label },
+        { display_name: "Plan", variable_name: "plan", value: plan.name },
       ],
       onSuccess: async (res) => {
         const u = { ...data, ref: res.reference };
@@ -190,256 +192,319 @@ const MembershipSection = ({ sendEmail }) => {
 
   return (
     <div className="max-w-2xl mx-auto pb-32 md:pb-16">
+      {/* Hero */}
       <div className="text-center mb-8 px-2">
         <div
-          className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-4 text-xs font-semibold"
+          className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-4 text-xs font-bold tracking-wider uppercase"
           style={{
-            background: "rgba(255,255,255,0.15)",
+            background: "rgba(253,230,138,0.15)",
             color: "#fde68a",
-            border: "1px solid rgba(255,255,255,0.2)",
+            border: "1px solid rgba(253,230,138,0.3)",
           }}
         >
-          <Crown className="w-3.5 h-3.5" /> Monthly Wellness
+          <Crown className="w-3.5 h-3.5" /> Monthly Wellness Membership
         </div>
         <h2
-          className="text-3xl sm:text-4xl font-bold text-white mb-3"
+          className="text-3xl sm:text-4xl font-bold text-white mb-3 leading-tight"
           style={{ fontFamily: "Cormorant Garamond" }}
         >
-          Commit to Your Wellbeing
+          One massage a month.
+          <br />
+          <span style={{ color: "#fde68a" }}>Every month.</span>
         </h2>
-        <p className="text-cyan-200 text-sm max-w-md mx-auto">
-          10% off every session. Real commitment, real results.
+        <p className="text-cyan-200 text-sm max-w-md mx-auto leading-relaxed">
+          A simple way to keep your body happy. Book your monthly session
+          whenever it suits you — we'll always have a slot for you.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        {MEM_PLANS.map((plan) => (
-          <button
-            key={plan.id}
-            onClick={() => setMPlan(plan.id)}
-            className="rounded-3xl p-5 text-left transition-all relative overflow-hidden"
-            style={{
-              background:
-                mPlan === plan.id
-                  ? "rgba(255,255,255,0.98)"
-                  : "rgba(255,255,255,0.08)",
-              border:
-                mPlan === plan.id
-                  ? "2px solid #06b6d4"
-                  : "2px solid rgba(255,255,255,0.15)",
-              boxShadow:
-                mPlan === plan.id ? "0 12px 32px rgba(6,182,212,0.25)" : "none",
-            }}
-          >
-            <span
-              className="absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full"
-              style={{
-                background:
-                  mPlan === plan.id ? "#0891b2" : "rgba(255,255,255,0.15)",
-                color: "white",
-              }}
-            >
-              {plan.tag}
-            </span>
-            <div className="text-3xl mb-3">{plan.icon}</div>
-            <h3
-              className="text-lg font-bold mb-1"
-              style={{
-                color: mPlan === plan.id ? "#0891b2" : "white",
-                fontFamily: "Cormorant Garamond",
-              }}
-            >
-              {plan.label}
-            </h3>
-            <p
-              className="text-xs mb-3 leading-relaxed"
-              style={{
-                color: mPlan === plan.id ? "#6b7280" : "rgba(255,255,255,0.7)",
-              }}
-            >
-              {plan.desc}
-            </p>
-            <div className="flex items-center gap-2">
-              <Calendar
-                className="w-4 h-4"
-                style={{ color: mPlan === plan.id ? "#0891b2" : "#67e8f9" }}
-              />
-              <span
-                className="text-sm font-semibold"
-                style={{ color: mPlan === plan.id ? "#0891b2" : "#67e8f9" }}
-              >
-                {plan.sessions} sessions / month
-              </span>
-            </div>
-            {mPlan === plan.id && mSvc && mDur && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-400 line-through">
-                    {fmt(plan.sessions * mBase())}
-                  </span>
-                  <span className="font-bold text-emerald-600">10% OFF</span>
-                </div>
-                <p
-                  className="text-2xl font-bold"
-                  style={{ color: "#0891b2", fontFamily: "Cormorant Garamond" }}
-                >
-                  {fmt(mTotal())}
-                  <span className="text-sm font-normal text-gray-500">
-                    /month
-                  </span>
-                </p>
-              </div>
-            )}
-          </button>
-        ))}
-      </div>
-
-      <FC>
-        <h4
-          className="font-bold text-gray-900 mb-5 text-lg"
-          style={{ fontFamily: "Cormorant Garamond" }}
-        >
-          Customise Your Plan
-        </h4>
-        <div className="mb-5">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-            Location
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { id: "studio", l: "Home Studio" },
-              { id: "mobile", l: "Mobile Service" },
-            ].map((o) => (
-              <button
-                key={o.id}
-                onClick={() => setMSvcType(o.id)}
-                className="p-4 rounded-2xl border-2 text-left transition-all"
-                style={{
-                  borderColor: mSvcType === o.id ? "#06b6d4" : "#e5e7eb",
-                  background: mSvcType === o.id ? "#f0f9ff" : "white",
-                }}
-              >
-                <span className="font-bold text-gray-900 text-sm">{o.l}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="mb-5">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-            Massage
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {SERVICES.map((svc) => (
-              <button
-                key={svc.id}
-                onClick={() => setMSvc(svc.id)}
-                className="p-3 rounded-2xl border-2 flex items-center gap-3 text-left transition-all"
-                style={{
-                  borderColor: mSvc === svc.id ? "#06b6d4" : "#e5e7eb",
-                  background: mSvc === svc.id ? "#f0f9ff" : "white",
-                }}
-              >
-                <span className="text-xl">{svc.icon}</span>
-                <span className="font-semibold text-gray-900 text-sm flex-1">
-                  {svc.name}
-                </span>
-                {mSvc === svc.id && <Tick />}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="mb-5">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-            Duration
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {durList(mSvc).map((m) => {
-              const base = getPrice(mSvcType, mSvc, m),
-                dp = disc10(base);
-              return (
-                <button
-                  key={m}
-                  onClick={() => setMDur(m)}
-                  className="p-3 rounded-2xl border-2 text-center transition-all"
-                  style={{
-                    borderColor: mDur === m ? "#06b6d4" : "#e5e7eb",
-                    background: mDur === m ? "#f0f9ff" : "white",
-                  }}
-                >
-                  <p className="font-bold text-gray-900 text-sm">{m} min</p>
-                  <p className="text-xs text-gray-400 line-through">
-                    {fmt(base)}
-                  </p>
-                  <p className="text-sm font-bold text-cyan-600">{fmt(dp)}</p>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-          <TF
-            label="Full Name *"
-            value={mName}
-            onChange={setMName}
-            placeholder="Your name"
-          />
-          <PF
-            label="Phone *"
-            value={mPhone}
-            error={mPhoneErr}
-            onChange={(v) => onPhone(v, setMPhone, setMPhoneErr)}
-          />
-        </div>
-        <div className="mb-5">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-            Email *
-          </label>
-          <input
-            type="email"
-            value={mEmail}
-            onChange={(e) => setMEmail(e.target.value)}
-            placeholder="your@email.com"
-            className="w-full p-4 rounded-2xl text-sm border-2 transition-all"
-            style={{
-              borderColor: mEmail ? "#06b6d4" : "#e5e7eb",
-              background: mEmail ? "#f0f9ff" : "white",
-            }}
-          />
-        </div>
-        {mSvc && mDur && (
-          <div className="rounded-2xl p-4 mb-5 bg-cyan-50 border-2 border-cyan-200 flex justify-between items-center">
-            <div>
-              <p className="text-sm font-bold text-gray-800">
-                {MEM_PLANS.find((p) => p.id === mPlan)?.label}
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {planSess()} sessions · 10% off
-              </p>
-            </div>
-            <p
-              className="text-2xl font-bold"
-              style={{ fontFamily: "Cormorant Garamond", color: "#0891b2" }}
-            >
-              {fmt(mTotal())}
-            </p>
-          </div>
-        )}
-        <button
-          onClick={handleMembership}
-          disabled={!mDone}
-          className="w-full py-4 rounded-2xl font-bold text-sm text-white transition-all"
+      {/* Plan card */}
+      <div
+        className="rounded-3xl overflow-hidden mb-6 shadow-2xl"
+        style={{
+          background:
+            "linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,249,255,0.98))",
+          border: "2px solid #fde68a",
+        }}
+      >
+        {/* Plan header */}
+        <div
+          className="px-6 py-5"
           style={{
-            background: mDone
-              ? "linear-gradient(135deg,#0891b2,#06b6d4)"
-              : "#d1d5db",
-            cursor: mDone ? "pointer" : "not-allowed",
-            boxShadow: mDone ? "0 6px 20px rgba(6,182,212,0.3)" : "none",
+            background: "linear-gradient(135deg,#0891b2,#06b6d4)",
           }}
         >
-          <Crown className="w-4 h-4 inline mr-2" />
-          Start My Membership
-        </button>
-      </FC>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="text-3xl">{plan.icon}</div>
+              <div>
+                <p
+                  className="font-bold text-white leading-tight"
+                  style={{
+                    fontFamily: "Cormorant Garamond",
+                    fontSize: "1.35rem",
+                  }}
+                >
+                  {plan.name}
+                </p>
+                <p className="text-xs text-cyan-50 mt-0.5">{plan.tagline}</p>
+              </div>
+            </div>
+            <span
+              className="text-xs font-bold px-3 py-1 rounded-full flex-shrink-0"
+              style={{
+                background: "#fef3c7",
+                color: "#92400e",
+              }}
+            >
+              SAVE 10%
+            </span>
+          </div>
+        </div>
+
+        {/* Benefits */}
+        <div className="px-6 py-6">
+          <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">
+            What's included
+          </p>
+          <ul className="space-y-3 mb-6">
+            {plan.benefits.map((b, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-base"
+                  style={{ background: "#ecfeff" }}
+                >
+                  {b.icon}
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed pt-1.5">
+                  {b.text}
+                </p>
+              </li>
+            ))}
+          </ul>
+
+          {/* Config */}
+          <div className="space-y-5 pt-6 border-t border-gray-100">
+            {/* Location */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
+                Location
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id: "studio", l: LOCATION_LABEL.studio, s: "Pay online" },
+                  {
+                    id: "mobile",
+                    l: LOCATION_LABEL.mobile,
+                    s: "Pay online too",
+                  },
+                ].map((o) => (
+                  <button
+                    key={o.id}
+                    onClick={() => setMSvcType(o.id)}
+                    className="p-3 rounded-2xl border-2 text-left transition-all"
+                    style={{
+                      borderColor: mSvcType === o.id ? "#06b6d4" : "#e5e7eb",
+                      background: mSvcType === o.id ? "#f0f9ff" : "white",
+                    }}
+                  >
+                    <p className="font-bold text-gray-900 text-xs leading-tight">
+                      {o.l}
+                    </p>
+                    <p
+                      className="text-xs mt-1 font-semibold"
+                      style={{ color: "#0891b2" }}
+                    >
+                      {o.s}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Service */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
+                Your monthly massage
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {SERVICES.map((svc) => (
+                  <button
+                    key={svc.id}
+                    onClick={() => setMSvc(svc.id)}
+                    className="p-3 rounded-2xl border-2 flex items-center gap-3 text-left transition-all"
+                    style={{
+                      borderColor: mSvc === svc.id ? "#06b6d4" : "#e5e7eb",
+                      background: mSvc === svc.id ? "#f0f9ff" : "white",
+                    }}
+                  >
+                    <span className="text-xl">{svc.icon}</span>
+                    <span className="font-semibold text-gray-900 text-sm flex-1">
+                      {svc.name}
+                    </span>
+                    {mSvc === svc.id && <Tick />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Duration */}
+            {mSvc && (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
+                  Session length
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {durList(mSvc).map((m) => {
+                    const base = getPrice(mSvcType, mSvc, m);
+                    const dp = disc10(base);
+                    const sel = mDur === m;
+                    return (
+                      <button
+                        key={m}
+                        onClick={() => setMDur(m)}
+                        className="p-3 rounded-2xl border-2 text-center transition-all"
+                        style={{
+                          borderColor: sel ? "#06b6d4" : "#e5e7eb",
+                          background: sel ? "#f0f9ff" : "white",
+                        }}
+                      >
+                        <p className="font-bold text-gray-900 text-sm">
+                          {m} min
+                        </p>
+                        <p className="text-xs text-gray-400 line-through mt-1">
+                          {fmt(base)}
+                        </p>
+                        <p className="text-sm font-bold text-cyan-600">
+                          {fmt(dp)}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Price preview */}
+            {mSvc && mDur && (
+              <div
+                className="rounded-2xl p-4 flex items-center justify-between gap-3"
+                style={{
+                  background: "linear-gradient(135deg,#ecfeff,#cffafe)",
+                  border: "2px solid #a5f3fc",
+                }}
+              >
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-cyan-700 mb-0.5">
+                    Your monthly fee
+                  </p>
+                  <p className="text-xs text-cyan-600">
+                    Billed monthly · cancel anytime
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p
+                    className="text-3xl font-bold leading-none"
+                    style={{
+                      fontFamily: "Cormorant Garamond",
+                      color: "#0891b2",
+                    }}
+                  >
+                    {fmt(mTotal())}
+                  </p>
+                  <p className="text-xs text-emerald-600 font-bold mt-1">
+                    You save {fmt(mSaved())}/mo
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Contact */}
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
+              Your details
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <TF
+                label="Full Name *"
+                value={mName}
+                onChange={setMName}
+                placeholder="Your name"
+              />
+              <PF
+                label="Phone *"
+                value={mPhone}
+                error={mPhoneErr}
+                onChange={(v) => onPhone(v, setMPhone, setMPhoneErr)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                Email *
+              </label>
+              <input
+                type="email"
+                value={mEmail}
+                onChange={(e) => setMEmail(e.target.value)}
+                placeholder="your@email.com"
+                className="w-full p-4 rounded-2xl text-sm border-2 transition-all"
+                style={{
+                  borderColor: mEmail ? "#06b6d4" : "#e5e7eb",
+                  background: mEmail ? "#f0f9ff" : "white",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* CTA */}
+          <button
+            onClick={handleMembership}
+            disabled={!mDone}
+            className="w-full mt-6 py-4 rounded-2xl font-bold text-sm text-white transition-all flex items-center justify-center gap-2"
+            style={{
+              background: mDone
+                ? "linear-gradient(135deg,#0891b2,#06b6d4)"
+                : "#d1d5db",
+              cursor: mDone ? "pointer" : "not-allowed",
+              boxShadow: mDone ? "0 6px 20px rgba(6,182,212,0.35)" : "none",
+            }}
+          >
+            <Crown className="w-4 h-4" />
+            {mSvc && mDur
+              ? `Start Membership — ${fmt(mTotal())}/mo`
+              : "Start Membership"}
+          </button>
+          <p className="text-xs text-center text-gray-400 mt-3">
+            🔒 Secure via Paystack · 256-bit SSL · Cancel anytime
+          </p>
+        </div>
+      </div>
+
+      {/* Small print / reassurance */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { icon: Repeat, l: "Auto-renews", s: "Monthly" },
+          { icon: Pause, l: "Pause anytime", s: "No penalty" },
+          { icon: Shield, l: "Secure billing", s: "Paystack" },
+        ].map(({ icon: Icon, l, s }) => (
+          <div
+            key={l}
+            className="rounded-2xl p-3 text-center"
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            <Icon
+              className="w-4 h-4 mx-auto mb-1.5"
+              style={{ color: "#67e8f9" }}
+            />
+            <p className="text-xs font-bold text-white">{l}</p>
+            <p className="text-xs text-cyan-200 mt-0.5">{s}</p>
+          </div>
+        ))}
+      </div>
 
       {mLoading && (
         <div
@@ -487,24 +552,29 @@ const MembershipSection = ({ sendEmail }) => {
             rows={[
               ["Member", mDetails.name],
               ["Plan", mDetails.plan],
-              ["Service", mDetails.service],
+              ["Monthly massage", mDetails.service],
+              ["Session", mDetails.duration],
               ["Location", mDetails.location],
-              ["Sessions/Month", `${mDetails.sessions}`],
               ["Monthly", fmt(mDetails.monthlyAmount)],
+              ["You save", fmt(mDetails.savedPerMonth)],
               ["Ref", mDetails.ref],
             ]}
             hi="Monthly"
           />
+          <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 mb-4 text-xs text-amber-800 leading-relaxed">
+            <b>What's next?</b> We'll reach out on WhatsApp to schedule your
+            first monthly session.
+          </div>
           <button
             onClick={() =>
               sendWA(
-                `Hello Vivify! 👑\n\nMy membership:\n👤 ${mDetails.name}\n📱 ${mDetails.phone}\n📋 ${mDetails.plan}\n💆 ${mDetails.service}\n💰 ${fmt(mDetails.monthlyAmount)}/month\n🔗 ${mDetails.ref}\n\nPlease contact me to schedule.`,
+                `Hello Vivify! 👑\n\nI just joined ${mDetails.plan}!\n\n👤 ${mDetails.name}\n📱 ${mDetails.phone}\n💆 ${mDetails.service} (${mDetails.duration})\n📍 ${mDetails.location}\n💰 ${fmt(mDetails.monthlyAmount)}/month\n🔗 ${mDetails.ref}\n\nPlease help me schedule my first session.`,
               )
             }
             className="w-full py-3 rounded-xl font-semibold text-sm text-white mb-2"
             style={{ background: "#25D366" }}
           >
-            💬 Send via WhatsApp
+            💬 Send Details via WhatsApp
           </button>
           <button
             onClick={resetMembership}
@@ -519,7 +589,7 @@ const MembershipSection = ({ sendEmail }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GIFT CARD SECTION
+// GIFT CARD — redesigned
 // ─────────────────────────────────────────────────────────────────────────────
 const GiftCardSection = ({ sendEmail }) => {
   const [gSvcType, setGSvcType] = useState("studio");
@@ -570,8 +640,7 @@ const GiftCardSection = ({ sendEmail }) => {
       recipientPhone: gRPhone,
       recipientEmail: gREmail,
       service: svcObj?.name,
-      location:
-        gSvcType === "studio" ? "Home Studio" : "Mobile Service (Home / Hotel)",
+      location: LOCATION_LABEL[gSvcType],
       duration: `${gDur} minutes`,
       caption: gCaption || "Wishing you pure relaxation 💆",
       amount: gPrice(),
@@ -613,127 +682,188 @@ const GiftCardSection = ({ sendEmail }) => {
 
   return (
     <div className="max-w-2xl mx-auto pb-32 md:pb-16">
+      {/* Hero */}
       <div className="text-center mb-8 px-2">
         <div
-          className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-4 text-xs font-semibold"
+          className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-4 text-xs font-bold tracking-wider uppercase"
           style={{
-            background: "rgba(255,255,255,0.15)",
+            background: "rgba(252,231,243,0.15)",
             color: "#fbcfe8",
-            border: "1px solid rgba(255,255,255,0.2)",
+            border: "1px solid rgba(252,231,243,0.3)",
           }}
         >
           <Gift className="w-3.5 h-3.5" /> Spa Gift Card
         </div>
         <h2
-          className="text-3xl sm:text-4xl font-bold text-white mb-3"
+          className="text-3xl sm:text-4xl font-bold text-white mb-3 leading-tight"
           style={{ fontFamily: "Cormorant Garamond" }}
         >
-          Give the Gift of Wellness
+          Give the Gift
+          <br />
+          <span style={{ color: "#fbcfe8" }}>of Wellness.</span>
         </h2>
-        <p className="text-cyan-200 text-sm max-w-md mx-auto">
-          We'll personally contact both buyer and recipient.
+        <p className="text-cyan-200 text-sm max-w-md mx-auto leading-relaxed">
+          A beautiful, personalised gift. We'll reach out to both of you to
+          arrange the session.
         </p>
       </div>
 
-      <div
-        className="rounded-3xl p-5 mb-6 text-white relative overflow-hidden"
-        style={{
-          background: "linear-gradient(135deg,#0c4a6e,#0e7490,#164e63)",
-          border: "1px solid rgba(255,255,255,0.2)",
-        }}
-      >
+      {/* Live preview card */}
+      <div className="mb-6">
+        <p className="text-xs font-bold uppercase tracking-wider text-cyan-200 mb-3 px-1">
+          Live preview
+        </p>
         <div
+          className="rounded-3xl p-6 sm:p-7 text-white relative overflow-hidden shadow-2xl"
           style={{
-            position: "absolute",
-            top: 0,
-            right: 0,
-            width: 120,
-            height: 120,
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.08)",
-            transform: "translate(40%,-40%)",
+            background: "linear-gradient(135deg,#db2777,#9d174d,#831843)",
           }}
-        />
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-cyan-300" />
-              <span
-                className="font-bold text-sm"
-                style={{ fontFamily: "Cormorant Garamond" }}
-              >
-                Vivify Massage & Spa
-              </span>
+        >
+          <div
+            style={{
+              position: "absolute",
+              top: -40,
+              right: -40,
+              width: 180,
+              height: 180,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle,rgba(255,255,255,0.15) 0%,transparent 70%)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              bottom: -60,
+              left: -40,
+              width: 200,
+              height: 200,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle,rgba(255,255,255,0.08) 0%,transparent 70%)",
+            }}
+          />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: "rgba(255,255,255,0.15)" }}
+                >
+                  <Sparkles className="w-4 h-4 text-pink-100" />
+                </div>
+                <div>
+                  <p
+                    className="font-bold text-sm leading-tight"
+                    style={{ fontFamily: "Cormorant Garamond" }}
+                  >
+                    Vivify Massage & Spa
+                  </p>
+                  <p
+                    className="text-xs leading-tight"
+                    style={{ color: "#fbcfe8" }}
+                  >
+                    Gift Card
+                  </p>
+                </div>
+              </div>
+              <Gift className="w-5 h-5 text-pink-200" />
             </div>
-            <Gift className="w-5 h-5 text-cyan-300" />
-          </div>
-          <p className="text-xs mb-1" style={{ color: "#bae6fd" }}>
-            A special gift for
-          </p>
-          <p
-            className="text-xl font-bold mb-1"
-            style={{ fontFamily: "Cormorant Garamond" }}
-          >
-            {gRName || "Your Recipient"}
-          </p>
-          <p className="text-sm italic mb-5" style={{ color: "#bae6fd" }}>
-            "{gCaption || "Wishing you pure relaxation 💆"}"
-          </p>
-          <div className="flex justify-between items-end">
-            <div>
-              <p className="text-xs" style={{ color: "#bae6fd" }}>
-                {gSvc
-                  ? SERVICES.find((s) => s.id === gSvc)?.name
-                  : "Select a service"}
-              </p>
-              <p className="text-xs" style={{ color: "#94a3b8" }}>
-                From {gBName || "Your Name"}
-              </p>
-            </div>
+
             <p
-              className="text-2xl font-bold"
+              className="text-xs uppercase tracking-widest mb-1"
+              style={{ color: "#fbcfe8" }}
+            >
+              A gift for
+            </p>
+            <p
+              className="text-2xl sm:text-3xl font-bold mb-1"
               style={{ fontFamily: "Cormorant Garamond" }}
             >
-              {gPrice() ? fmt(gPrice()) : "₦—"}
+              {gRName || "Their Name"}
             </p>
+
+            <p
+              className="text-sm italic mb-6 mt-3 px-4 py-3 rounded-2xl"
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                color: "#fce7f3",
+                borderLeft: "3px solid #f9a8d4",
+              }}
+            >
+              "{gCaption || "Wishing you pure relaxation 💆"}"
+            </p>
+
+            <div className="flex justify-between items-end pt-4 border-t border-white/20">
+              <div>
+                <p className="text-xs" style={{ color: "#fbcfe8" }}>
+                  {gSvc
+                    ? SERVICES.find((s) => s.id === gSvc)?.name
+                    : "Select a service"}
+                </p>
+                {gDur && (
+                  <p className="text-xs mt-0.5" style={{ color: "#fbcfe8" }}>
+                    {gDur} minutes ·{" "}
+                    {gSvcType === "studio"
+                      ? "Our Home Studio"
+                      : "Your Home or Hotel"}
+                  </p>
+                )}
+                <p className="text-xs mt-1" style={{ color: "#f9a8d4" }}>
+                  From {gBName || "Your Name"}
+                </p>
+              </div>
+              <div className="text-right">
+                <p
+                  className="text-xs uppercase tracking-wider"
+                  style={{ color: "#fbcfe8" }}
+                >
+                  Value
+                </p>
+                <p
+                  className="text-3xl sm:text-4xl font-bold leading-none"
+                  style={{ fontFamily: "Cormorant Garamond" }}
+                >
+                  {gPrice() ? fmt(gPrice()) : "₦—"}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Section: Gift details */}
       <FC>
+        <SectionHeading
+          number="01"
+          title="Design the gift"
+          hint="Choose the treatment you'd like to give"
+        />
+
         <div className="mb-5">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-            Location
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => setGSvcType("studio")}
-              className="p-4 rounded-2xl border-2 text-left transition-all"
-              style={{
-                borderColor: gSvcType === "studio" ? "#06b6d4" : "#e5e7eb",
-                background: gSvcType === "studio" ? "#f0f9ff" : "white",
-              }}
-            >
-              <span className="font-bold text-gray-900 text-sm">
-                Home Studio
-              </span>
-            </button>
-            <button
-              onClick={() => setGSvcType("mobile")}
-              className="p-4 rounded-2xl border-2 text-left transition-all"
-              style={{
-                borderColor: gSvcType === "mobile" ? "#06b6d4" : "#e5e7eb",
-                background: gSvcType === "mobile" ? "#f0f9ff" : "white",
-              }}
-            >
-              <span className="font-bold text-gray-900 text-sm">Mobile</span>
-            </button>
+          <SubLabel>Location</SubLabel>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              { id: "studio", l: LOCATION_LABEL.studio },
+              { id: "mobile", l: LOCATION_LABEL.mobile },
+            ].map((o) => (
+              <button
+                key={o.id}
+                onClick={() => setGSvcType(o.id)}
+                className="p-4 rounded-2xl border-2 text-left transition-all"
+                style={{
+                  borderColor: gSvcType === o.id ? "#db2777" : "#e5e7eb",
+                  background: gSvcType === o.id ? "#fdf2f8" : "white",
+                }}
+              >
+                <span className="font-bold text-gray-900 text-sm">{o.l}</span>
+              </button>
+            ))}
           </div>
         </div>
+
         <div className="mb-5">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-            Massage
-          </label>
+          <SubLabel>Massage</SubLabel>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {SERVICES.map((svc) => (
               <button
@@ -741,159 +871,203 @@ const GiftCardSection = ({ sendEmail }) => {
                 onClick={() => setGSvc(svc.id)}
                 className="p-3 rounded-2xl border-2 flex items-center gap-3 text-left transition-all"
                 style={{
-                  borderColor: gSvc === svc.id ? "#06b6d4" : "#e5e7eb",
-                  background: gSvc === svc.id ? "#f0f9ff" : "white",
+                  borderColor: gSvc === svc.id ? "#db2777" : "#e5e7eb",
+                  background: gSvc === svc.id ? "#fdf2f8" : "white",
                 }}
               >
                 <span className="text-xl">{svc.icon}</span>
                 <span className="font-semibold text-gray-900 text-sm flex-1">
                   {svc.name}
                 </span>
-                {gSvc === svc.id && <Tick />}
+                {gSvc === svc.id && (
+                  <div className="w-5 h-5 rounded-full bg-pink-500 flex items-center justify-center">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                )}
               </button>
             ))}
           </div>
         </div>
-        <div className="mb-5">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-            Duration
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {durList(gSvc).map((m) => (
-              <button
-                key={m}
-                onClick={() => setGDur(m)}
-                className="p-3 rounded-2xl border-2 text-center transition-all"
-                style={{
-                  borderColor: gDur === m ? "#06b6d4" : "#e5e7eb",
-                  background: gDur === m ? "#f0f9ff" : "white",
-                }}
-              >
-                <p className="font-bold text-gray-900 text-sm">{m} min</p>
-                <p className="text-sm font-bold text-cyan-600 mt-1">
-                  {fmt(getPrice(gSvcType, gSvc, m))}
-                </p>
-              </button>
-            ))}
+
+        {gSvc && (
+          <div className="mb-5">
+            <SubLabel>Duration</SubLabel>
+            <div className="grid grid-cols-3 gap-2">
+              {durList(gSvc).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setGDur(m)}
+                  className="p-3 rounded-2xl border-2 text-center transition-all"
+                  style={{
+                    borderColor: gDur === m ? "#db2777" : "#e5e7eb",
+                    background: gDur === m ? "#fdf2f8" : "white",
+                  }}
+                >
+                  <p className="font-bold text-gray-900 text-sm">{m} min</p>
+                  <p className="text-sm font-bold text-pink-600 mt-1">
+                    {fmt(getPrice(gSvcType, gSvc, m))}
+                  </p>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="mb-6">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-            Personal Message
-          </label>
+        )}
+
+        <div>
+          <SubLabel>Personal message</SubLabel>
           <textarea
             value={gCaption}
             onChange={(e) => setGCaption(e.target.value)}
             rows={3}
-            placeholder="Write something personal…"
-            className="w-full p-4 rounded-2xl text-sm resize-none border-2 border-gray-200 focus:border-cyan-500 transition-all"
+            placeholder="Wishing you a year of calm and strength 💆"
+            className="w-full p-4 rounded-2xl text-sm resize-none border-2 border-gray-200 focus:border-pink-400 transition-all"
           />
+          <p className="text-xs text-gray-400 mt-2">
+            This message appears on the gift card the recipient receives.
+          </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-          <div>
-            <p className="font-bold text-gray-800 mb-3 text-sm pb-2 border-b border-gray-100">
-              🎁 You (Buying)
-            </p>
-            <div className="space-y-3">
-              <TF
-                label="Full Name *"
-                value={gBName}
-                onChange={setGBName}
-                placeholder="Your name"
-              />
-              <PF
-                label="Phone *"
-                value={gBPhone}
-                error={gBPhoneErr}
-                onChange={(v) => onPhone(v, setGBPhone, setGBPhoneErr)}
-              />
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  value={gBEmail}
-                  onChange={(e) => setGBEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  className="w-full p-3 rounded-xl text-sm border-2 transition-all"
-                  style={{
-                    borderColor: gBEmail ? "#06b6d4" : "#e5e7eb",
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-          <div>
-            <p className="font-bold text-gray-800 mb-3 text-sm pb-2 border-b border-pink-100">
-              💝 Recipient
-            </p>
-            <div className="space-y-3">
-              <TF
-                label="Full Name *"
-                value={gRName}
-                onChange={setGRName}
-                placeholder="Recipient's name"
-              />
-              <PF
-                label="Phone"
-                value={gRPhone}
-                error={gRPhoneErr}
-                onChange={(v) => onPhone(v, setGRPhone, setGRPhoneErr)}
-              />
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={gREmail}
-                  onChange={(e) => setGREmail(e.target.value)}
-                  placeholder="recipient@email.com"
-                  className="w-full p-3 rounded-xl text-sm border-2 transition-all"
-                  style={{
-                    borderColor: gREmail ? "#06b6d4" : "#e5e7eb",
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        <p className="text-xs text-gray-400 mb-5">
-          * Provide at least one contact for the recipient (phone or email).
-        </p>
-        {gSvc && gPrice() > 0 && (
-          <div className="rounded-2xl p-4 mb-5 bg-pink-50 border-2 border-pink-200 flex justify-between items-center">
+      </FC>
+
+      {/* Section: Buyer */}
+      <div className="mt-5">
+        <FC>
+          <SectionHeading
+            number="02"
+            title="Your details"
+            hint="So we can send you the receipt"
+          />
+          <div className="space-y-4">
+            <TF
+              label="Full Name *"
+              value={gBName}
+              onChange={setGBName}
+              placeholder="Your name"
+            />
+            <PF
+              label="Phone *"
+              value={gBPhone}
+              error={gBPhoneErr}
+              onChange={(v) => onPhone(v, setGBPhone, setGBPhoneErr)}
+            />
             <div>
-              <p className="text-sm font-bold text-gray-800">Gift Card Value</p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {SERVICES.find((s) => s.id === gSvc)?.name}
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                Email *
+              </label>
+              <input
+                type="email"
+                value={gBEmail}
+                onChange={(e) => setGBEmail(e.target.value)}
+                placeholder="your@email.com"
+                className="w-full p-4 rounded-2xl text-sm border-2 transition-all"
+                style={{
+                  borderColor: gBEmail ? "#db2777" : "#e5e7eb",
+                  background: gBEmail ? "#fdf2f8" : "white",
+                }}
+              />
+            </div>
+          </div>
+        </FC>
+      </div>
+
+      {/* Section: Recipient */}
+      <div className="mt-5">
+        <FC>
+          <SectionHeading
+            number="03"
+            title="Who's receiving it?"
+            hint="Provide at least one way for us to reach them"
+          />
+          <div className="space-y-4">
+            <TF
+              label="Recipient's Full Name *"
+              value={gRName}
+              onChange={setGRName}
+              placeholder="Their name"
+            />
+            <PF
+              label="Recipient's Phone"
+              value={gRPhone}
+              error={gRPhoneErr}
+              onChange={(v) => onPhone(v, setGRPhone, setGRPhoneErr)}
+            />
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                Recipient's Email
+              </label>
+              <input
+                type="email"
+                value={gREmail}
+                onChange={(e) => setGREmail(e.target.value)}
+                placeholder="recipient@email.com"
+                className="w-full p-4 rounded-2xl text-sm border-2 transition-all"
+                style={{
+                  borderColor: gREmail ? "#db2777" : "#e5e7eb",
+                  background: gREmail ? "#fdf2f8" : "white",
+                }}
+              />
+              <p className="text-xs text-gray-400 mt-2">
+                If you provide their email, we'll send them a beautiful gift
+                notification directly.
               </p>
             </div>
-            <p
-              className="text-2xl font-bold"
-              style={{ fontFamily: "Cormorant Garamond", color: "#db2777" }}
-            >
-              {fmt(gPrice())}
-            </p>
           </div>
-        )}
-        <button
-          onClick={handleGift}
-          disabled={!gDone}
-          className="w-full py-4 rounded-2xl font-bold text-sm text-white transition-all"
-          style={{
-            background: gDone
-              ? "linear-gradient(135deg,#db2777,#ec4899)"
-              : "#d1d5db",
-            cursor: gDone ? "pointer" : "not-allowed",
-            boxShadow: gDone ? "0 6px 20px rgba(219,39,119,0.3)" : "none",
-          }}
-        >
-          <Gift className="w-4 h-4 inline mr-2" />
-          Purchase Gift Card
-        </button>
-      </FC>
+        </FC>
+      </div>
+
+      {/* Pay CTA */}
+      <div className="mt-5">
+        <FC>
+          {gSvc && gPrice() > 0 && (
+            <div
+              className="rounded-2xl p-4 mb-5 flex items-center justify-between"
+              style={{
+                background: "linear-gradient(135deg,#fdf2f8,#fce7f3)",
+                border: "2px solid #fbcfe8",
+              }}
+            >
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-pink-700 mb-0.5">
+                  Gift value
+                </p>
+                <p className="text-sm text-gray-700">
+                  {SERVICES.find((s) => s.id === gSvc)?.name} · {gDur} min
+                </p>
+              </div>
+              <p
+                className="text-3xl font-bold leading-none"
+                style={{
+                  fontFamily: "Cormorant Garamond",
+                  color: "#db2777",
+                }}
+              >
+                {fmt(gPrice())}
+              </p>
+            </div>
+          )}
+
+          <button
+            onClick={handleGift}
+            disabled={!gDone}
+            className="w-full py-4 rounded-2xl font-bold text-sm text-white transition-all flex items-center justify-center gap-2"
+            style={{
+              background: gDone
+                ? "linear-gradient(135deg,#db2777,#ec4899)"
+                : "#d1d5db",
+              cursor: gDone ? "pointer" : "not-allowed",
+              boxShadow: gDone ? "0 6px 20px rgba(219,39,119,0.35)" : "none",
+            }}
+          >
+            <Gift className="w-4 h-4" />
+            {gPrice() > 0
+              ? `Purchase Gift Card — ${fmt(gPrice())}`
+              : "Purchase Gift Card"}
+          </button>
+          <p className="text-xs text-center text-gray-400 mt-3">
+            🔒 Secure via Paystack · Confirmation emails to you
+            {gREmail ? " and the recipient" : ""}
+          </p>
+        </FC>
+      </div>
 
       {gLoading && (
         <div
@@ -934,9 +1108,58 @@ const GiftCardSection = ({ sendEmail }) => {
               Gift Card Sent! 🎁
             </h3>
             <p className="text-sm text-gray-500">
-              Confirmation sent to {gDetails.buyerEmail}
+              Confirmation sent to <b>{gDetails.buyerEmail}</b>
+              {gDetails.recipientEmail ? (
+                <>
+                  {" "}
+                  and <b>{gDetails.recipientEmail}</b>
+                </>
+              ) : null}
             </p>
           </div>
+
+          <div
+            className="rounded-2xl p-5 mb-4 text-white relative overflow-hidden"
+            style={{
+              background: "linear-gradient(135deg,#db2777,#9d174d)",
+            }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-4 h-4 text-pink-200" />
+              <span
+                className="font-bold text-sm"
+                style={{ fontFamily: "Cormorant Garamond" }}
+              >
+                Vivify Massage & Spa
+              </span>
+            </div>
+            <p
+              className="text-lg font-bold mb-1"
+              style={{ fontFamily: "Cormorant Garamond" }}
+            >
+              For {gDetails.recipientName}
+            </p>
+            <p className="text-xs italic mb-3" style={{ color: "#fbcfe8" }}>
+              "{gDetails.caption}"
+            </p>
+            <div className="flex justify-between items-end pt-3 border-t border-white/20">
+              <div>
+                <p className="text-xs" style={{ color: "#fbcfe8" }}>
+                  {gDetails.service}
+                </p>
+                <p className="text-xs" style={{ color: "#f9a8d4" }}>
+                  From {gDetails.buyerName}
+                </p>
+              </div>
+              <p
+                className="text-2xl font-bold"
+                style={{ fontFamily: "Cormorant Garamond" }}
+              >
+                {fmt(gDetails.amount)}
+              </p>
+            </div>
+          </div>
+
           <SBox
             rows={[
               ["Ref", gDetails.ref],
@@ -945,6 +1168,12 @@ const GiftCardSection = ({ sendEmail }) => {
             ]}
             hi="Value"
           />
+
+          <div className="rounded-xl bg-pink-50 border border-pink-200 p-3 mb-4 text-xs text-pink-800 leading-relaxed">
+            <b>What's next?</b> We'll reach out to {gDetails.recipientName} to
+            arrange their session. You'll both get an email confirmation.
+          </div>
+
           <button
             onClick={() =>
               sendWA(
@@ -954,7 +1183,7 @@ const GiftCardSection = ({ sendEmail }) => {
             className="w-full py-3 rounded-xl font-semibold text-sm text-white mb-2"
             style={{ background: "#25D366" }}
           >
-            💬 Send via WhatsApp
+            💬 Send Details via WhatsApp
           </button>
           <button
             onClick={resetGift}
@@ -967,6 +1196,30 @@ const GiftCardSection = ({ sendEmail }) => {
     </div>
   );
 };
+
+// ── Section helper components for gift card ──
+const SectionHeading = ({ number, title, hint }) => (
+  <div className="mb-5">
+    <div className="flex items-center gap-2 mb-1">
+      <span
+        className="text-xs font-black tracking-widest"
+        style={{ color: "#db2777" }}
+      >
+        {number}
+      </span>
+      <span className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+        {title}
+      </span>
+    </div>
+    {hint && <p className="text-xs text-gray-400">{hint}</p>}
+  </div>
+);
+
+const SubLabel = ({ children }) => (
+  <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+    {children}
+  </p>
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN APP
@@ -993,9 +1246,6 @@ const VivifySpaWebsite = () => {
       if (!resp.ok) throw new Error("Email API error");
     } catch (err) {
       console.error("Email sending failed:", err);
-      alert(
-        "Booking confirmed, but email notification could not be sent. WhatsApp sent.",
-      );
     }
   };
 
@@ -1022,8 +1272,6 @@ const VivifySpaWebsite = () => {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=Cormorant+Garamond:wght@400;500;600;700&display=swap');
         @keyframes spin { to{transform:rotate(360deg)} }
-        .no-scrollbar::-webkit-scrollbar{display:none}
-        .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
         input,textarea,select,button { outline:none; font-family:inherit }
         button { -webkit-tap-highlight-color:transparent }
         * { box-sizing:border-box }
@@ -1032,9 +1280,7 @@ const VivifySpaWebsite = () => {
         }
       `}</style>
 
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* DESKTOP HEADER                                          */}
-      {/* ═══════════════════════════════════════════════════════ */}
+      {/* DESKTOP HEADER */}
       <header
         className="hidden md:block sticky top-0 z-40"
         style={{
@@ -1044,7 +1290,6 @@ const VivifySpaWebsite = () => {
         }}
       >
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-6">
-          {/* Logo */}
           <div className="flex items-center gap-3 flex-shrink-0">
             <div
               className="w-10 h-10 rounded-2xl flex items-center justify-center"
@@ -1070,7 +1315,6 @@ const VivifySpaWebsite = () => {
 
           <div className="flex-1" />
 
-          {/* Pills */}
           <nav
             className="flex items-center gap-1 p-1 rounded-2xl"
             style={{ background: "rgba(255,255,255,0.08)" }}
@@ -1101,9 +1345,7 @@ const VivifySpaWebsite = () => {
         </div>
       </header>
 
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* MOBILE HEADER                                           */}
-      {/* ═══════════════════════════════════════════════════════ */}
+      {/* MOBILE HEADER */}
       <header
         className="md:hidden sticky top-0 z-40"
         style={{
@@ -1151,9 +1393,7 @@ const VivifySpaWebsite = () => {
         </div>
       </header>
 
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* HERO (hidden for sports)                                */}
-      {/* ═══════════════════════════════════════════════════════ */}
+      {/* HERO */}
       {!hideHero && (
         <section className="py-10 sm:py-16 relative overflow-hidden">
           <div
@@ -1195,9 +1435,7 @@ const VivifySpaWebsite = () => {
         </section>
       )}
 
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* MAIN CONTENT                                            */}
-      {/* ═══════════════════════════════════════════════════════ */}
+      {/* MAIN */}
       <div id="main">
         {activeTab === "booking" && (
           <div className="px-4 sm:px-6">
@@ -1220,9 +1458,7 @@ const VivifySpaWebsite = () => {
         )}
       </div>
 
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* TESTIMONIALS + FOOTER                                   */}
-      {/* ═══════════════════════════════════════════════════════ */}
+      {/* TESTIMONIALS */}
       <section
         className="py-12 sm:py-16 mt-8"
         style={{
@@ -1289,6 +1525,7 @@ const VivifySpaWebsite = () => {
         </div>
       </section>
 
+      {/* FOOTER */}
       <footer
         className="py-10 sm:py-14 pb-32 md:pb-14"
         style={{ background: "#0c1a2e" }}
@@ -1375,9 +1612,7 @@ const VivifySpaWebsite = () => {
         </div>
       </footer>
 
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* MOBILE BOTTOM NAV (fixed)                               */}
-      {/* ═══════════════════════════════════════════════════════ */}
+      {/* MOBILE BOTTOM NAV */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-50"
         style={{
