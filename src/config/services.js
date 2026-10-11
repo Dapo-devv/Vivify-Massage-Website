@@ -97,6 +97,32 @@ export const THERAPISTS = [
   },
 ];
 
+// ─────────────────────────────────────────────────────────────
+// Sports Massage therapists.
+//
+// Add a new therapist by appending to this array — the info card
+// in SportsMassage.jsx reads from here and updates its copy
+// automatically. Flip `available: false` to hide someone without
+// deleting them.
+// ─────────────────────────────────────────────────────────────
+export const SPORTS_THERAPISTS = [
+  {
+    id: "male-specialist",
+    name: "Male Specialist",
+    gender: "male",
+    role: "Certified Sports & Recovery Therapist",
+    available: true,
+  },
+  // ── Future: uncomment + edit when you add a female sports therapist ──
+  // {
+  //   id: "female-specialist",
+  //   name: "Female Specialist",
+  //   gender: "female",
+  //   role: "Certified Sports & Recovery Therapist",
+  //   available: true,
+  // },
+];
+
 export const STUDIO_SLOTS = [
   "9:00 AM",
   "10:00 AM",
@@ -150,9 +176,6 @@ export const MEM_PLANS = [
   },
 ];
 
-// ─────────────────────────────────────────────────────────────
-// Sports Massage — MET + PNF stretching only
-// ─────────────────────────────────────────────────────────────
 export const SPORTS_TECHNIQUES = [
   {
     id: "met",
@@ -185,9 +208,7 @@ export const SPORTS_FOCUS = [
   "Full Body",
 ];
 
-// ─────────────────────────────────────────────────────────────
 // Helpers
-// ─────────────────────────────────────────────────────────────
 export const fmt = (n) => `₦${Number(n).toLocaleString()}`;
 export const disc10 = (n) => Math.round(n * 0.9);
 export const getPrice = (type, svc, dur) => PRICING[type]?.[svc]?.[dur] || 0;
@@ -198,4 +219,56 @@ export const maxStr = () => {
   const d = new Date();
   d.setMonth(d.getMonth() + 3);
   return d.toISOString().split("T")[0];
+};
+
+// ─────────────────────────────────────────────────────────────
+// Location labels — single source of truth so we never miss one
+// ─────────────────────────────────────────────────────────────
+export const LOCATION_LABEL = {
+  studio: "Our Home Studio",
+  mobile: "Your Home or Hotel",
+};
+
+// ─────────────────────────────────────────────────────────────
+// Sports therapist copy helper — derives the info card text
+// from the SPORTS_THERAPISTS array. Add a female → copy updates.
+// ─────────────────────────────────────────────────────────────
+export const getSportsTherapistInfo = () => {
+  const available = SPORTS_THERAPISTS.filter((t) => t.available);
+  const hasMale = available.some((t) => t.gender === "male");
+  const hasFemale = available.some((t) => t.gender === "female");
+
+  let headline = "";
+  let detail = "";
+
+  if (hasMale && hasFemale) {
+    headline = "Male & Female Specialists Available";
+    detail =
+      "Both specialists are certified in Sports Massage. Your therapist will be confirmed when we reach out on WhatsApp.";
+  } else if (hasMale) {
+    headline = "Performed by our Male Specialist";
+    detail =
+      "Sports Massage is currently delivered by our certified male specialist. You'll meet him at your session.";
+  } else if (hasFemale) {
+    headline = "Performed by our Female Specialist";
+    detail =
+      "Sports Massage is currently delivered by our certified female specialist. You'll meet her at your session.";
+  } else {
+    headline = "Therapist Assignment Confirmed on Booking";
+    detail =
+      "We'll assign a certified specialist and confirm their details when we reach out on WhatsApp.";
+  }
+
+  return {
+    available,
+    hasMale,
+    hasFemale,
+    headline,
+    detail,
+    list: available.map((t) => ({
+      name: t.name,
+      role: t.role,
+      gender: t.gender,
+    })),
+  };
 };

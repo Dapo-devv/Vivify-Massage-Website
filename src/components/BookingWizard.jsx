@@ -1,16 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Home,
   Building2,
   User,
   Check,
-  Sparkles,
   ArrowRight,
   ArrowLeft,
   ShieldCheck,
   Wallet,
-  Calendar as CalendarIcon,
-  Clock as ClockIcon,
 } from "lucide-react";
 import {
   SERVICES,
@@ -20,6 +17,7 @@ import {
   fmt,
   getPrice,
   durList,
+  LOCATION_LABEL,
 } from "../config/services";
 import DateStrip from "./DateStrip";
 import SlotGrid from "./SlotGrid";
@@ -32,7 +30,7 @@ const PAYSTACK_KEY = "pk_live_915663b76742c16f999c99e6251596ee7c5c9584";
 export default function BookingWizard() {
   const [step, setStep] = useState(0);
 
-  // ── Booking draft (single service) ──
+  // ── Draft ──
   const [svcType, setSvcType] = useState("studio");
   const [service, setService] = useState("");
   const [duration, setDuration] = useState("");
@@ -52,6 +50,18 @@ export default function BookingWizard() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [booking, setBooking] = useState(null);
+
+  // ── Scroll anchor (fixes "next step opens mid-page") ──
+  const topRef = useRef(null);
+  useEffect(() => {
+    if (!topRef.current) return;
+    const headerOffset = window.innerWidth < 768 ? 64 : 88;
+    const y =
+      topRef.current.getBoundingClientRect().top +
+      window.pageYOffset -
+      headerOffset;
+    window.scrollTo({ top: Math.max(y, 0), behavior: "smooth" });
+  }, [step]);
 
   const totalDuration = useMemo(() => {
     if (!duration) return 0;
@@ -77,7 +87,6 @@ export default function BookingWizard() {
     minutes: totalDuration || 60,
   });
 
-  // ── Validation ──
   const customerValid = !!(
     name &&
     phone.replace(/\D/g, "").length >= 11 &&
@@ -85,7 +94,7 @@ export default function BookingWizard() {
   );
   const stepValid = [
     !!(svcType && service && duration),
-    true, // add-ons optional
+    true,
     !!therapist,
     !!(date && time),
     customerValid,
@@ -94,32 +103,27 @@ export default function BookingWizard() {
   const next = () => setStep((s) => Math.min(s + 1, 4));
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
-  // Auto-fix duration when service changes
   useEffect(() => {
     if (!service) return;
     const opts = durList(service);
     if (!opts.includes(Number(duration))) setDuration(opts[0]);
   }, [service, duration]);
 
-  // Reset time when key inputs change
   useEffect(() => {
     setTime("");
   }, [date, svcType, totalDuration]);
 
-  // ── Submit ──
   const submitBooking = async () => {
     if (!customerValid) return;
     setLoading(true);
     try {
       const svcObj = SERVICES.find((s) => s.id === service);
 
-      // Mobile → no upfront payment
       if (svcType === "mobile") {
         await finalizeBooking("PAY-AFTER", svcObj);
         return;
       }
 
-      // Studio → Paystack
       const res = await fetch("/api/book", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -285,12 +289,9 @@ export default function BookingWizard() {
     return `Pay 50% — ${fmt(Math.round(total * 0.5))}`;
   })();
 
-  // ─────────────────────────────────────────────────────────
-  // RENDER
-  // ─────────────────────────────────────────────────────────
   return (
-    <div className="max-w-2xl mx-auto pb-32 md:pb-16">
-      {/* ── Progress ── */}
+    <div ref={topRef} className="max-w-2xl mx-auto pb-32 md:pb-16">
+      {/* Progress */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
           {STEPS.map((label, i) => (
@@ -327,17 +328,14 @@ export default function BookingWizard() {
         </p>
       </div>
 
-      {/* ── Card ── */}
       <div
         className="bg-white rounded-3xl overflow-hidden shadow-2xl"
         style={{ border: "1px solid rgba(255,255,255,0.1)" }}
       >
-        {/* Header */}
+        {/* Card header */}
         <div
           className="px-6 py-5"
-          style={{
-            background: "linear-gradient(135deg,#0891b2,#06b6d4)",
-          }}
+          style={{ background: "linear-gradient(135deg,#0891b2,#06b6d4)" }}
         >
           <p
             className="font-bold text-white leading-tight"
@@ -360,24 +358,23 @@ export default function BookingWizard() {
 
         {/* Body */}
         <div className="p-5 sm:p-7">
-          {/* ─────── STEP 0: Location + Service + Duration ─────── */}
+          {/* ── STEP 0 ── */}
           {step === 0 && (
             <div className="space-y-6">
-              {/* Location */}
               <div>
                 <Label>Location</Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     {
                       id: "studio",
-                      label: "Home Studio",
+                      label: LOCATION_LABEL.studio,
                       sub: "Pay online",
                       Icon: Building2,
                     },
                     {
                       id: "mobile",
-                      label: "Mobile",
-                      sub: "Pay after",
+                      label: LOCATION_LABEL.mobile,
+                      sub: "Pay after session",
                       Icon: Home,
                     },
                   ].map((o) => (
@@ -413,7 +410,6 @@ export default function BookingWizard() {
                 </div>
               </div>
 
-              {/* Services */}
               <div>
                 <Label>Massage</Label>
                 <div className="space-y-3">
@@ -431,9 +427,7 @@ export default function BookingWizard() {
                       >
                         <div
                           className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl"
-                          style={{
-                            background: sel ? "#e0f2fe" : "#f3f4f6",
-                          }}
+                          style={{ background: sel ? "#e0f2fe" : "#f3f4f6" }}
                         >
                           {svc.icon}
                         </div>
@@ -465,7 +459,6 @@ export default function BookingWizard() {
                 </div>
               </div>
 
-              {/* Duration */}
               {service && (
                 <div>
                   <Label>Duration</Label>
@@ -505,7 +498,7 @@ export default function BookingWizard() {
             </div>
           )}
 
-          {/* ─────── STEP 1: Add-ons ─────── */}
+          {/* ── STEP 1 ── */}
           {step === 1 && (
             <div className="space-y-3">
               {ADDONS.map((a) => {
@@ -552,7 +545,7 @@ export default function BookingWizard() {
             </div>
           )}
 
-          {/* ─────── STEP 2: Therapist ─────── */}
+          {/* ── STEP 2 ── */}
           {step === 2 && (
             <div className="space-y-3">
               {THERAPISTS.map((t) => {
@@ -569,9 +562,7 @@ export default function BookingWizard() {
                   >
                     <div
                       className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{
-                        background: sel ? "#0891b2" : "#f1f5f9",
-                      }}
+                      style={{ background: sel ? "#0891b2" : "#f1f5f9" }}
                     >
                       <User
                         className="w-5 h-5"
@@ -591,7 +582,7 @@ export default function BookingWizard() {
             </div>
           )}
 
-          {/* ─────── STEP 3: Date + Time ─────── */}
+          {/* ── STEP 3 ── */}
           {step === 3 && (
             <div className="space-y-6">
               <div>
@@ -624,7 +615,7 @@ export default function BookingWizard() {
             </div>
           )}
 
-          {/* ─────── STEP 4: Details + Confirm ─────── */}
+          {/* ── STEP 4 ── */}
           {step === 4 && (
             <div className="space-y-6">
               <div>
@@ -705,7 +696,6 @@ export default function BookingWizard() {
                 </div>
               )}
 
-              {/* Summary */}
               <div
                 className="rounded-2xl p-4"
                 style={{
@@ -725,7 +715,9 @@ export default function BookingWizard() {
                   icon={svcType === "studio" ? "🏢" : "🏠"}
                   label="Location"
                   value={
-                    svcType === "studio" ? "Home Studio" : "Mobile Service"
+                    svcType === "studio"
+                      ? LOCATION_LABEL.studio
+                      : LOCATION_LABEL.mobile
                   }
                 />
                 <SummaryRow
@@ -855,7 +847,6 @@ export default function BookingWizard() {
         </div>
       </div>
 
-      {/* Loading overlay */}
       {loading && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
@@ -884,7 +875,6 @@ export default function BookingWizard() {
         </div>
       )}
 
-      {/* Success */}
       {success && booking && (
         <Modal onClose={reset}>
           <div className="text-center mb-5">

@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Activity,
   Target,
-  AlertTriangle,
   Check,
   ArrowLeft,
+  ArrowRight,
+  UserCheck,
 } from "lucide-react";
 import {
   PRICING,
@@ -12,6 +13,8 @@ import {
   SPORTS_TECHNIQUES,
   SPORTS_DURATIONS,
   SPORTS_FOCUS,
+  LOCATION_LABEL,
+  getSportsTherapistInfo,
 } from "../config/services";
 import DateStrip from "./DateStrip";
 import SlotGrid from "./SlotGrid";
@@ -50,8 +53,21 @@ export default function SportsMassage() {
   const [success, setSuccess] = useState(false);
   const [booking, setBooking] = useState(null);
 
+  // ── Scroll anchor ──
+  const topRef = useRef(null);
+  useEffect(() => {
+    if (!topRef.current) return;
+    const headerOffset = window.innerWidth < 768 ? 64 : 88;
+    const y =
+      topRef.current.getBoundingClientRect().top +
+      window.pageYOffset -
+      headerOffset;
+    window.scrollTo({ top: Math.max(y, 0), behavior: "smooth" });
+  }, [step]);
+
   const price = PRICING[svcType].sports[duration];
   const techniqueObj = SPORTS_TECHNIQUES.find((t) => t.id === technique);
+  const therapistInfo = getSportsTherapistInfo();
 
   const { available, loading: slotsLoading } = useAvailability({
     date,
@@ -76,11 +92,7 @@ export default function SportsMassage() {
     email
   );
 
-  const stepValid = [
-    true, // sport + focus
-    !!(date && time), // schedule
-    customerValid, // details
-  ];
+  const stepValid = [true, !!(date && time), customerValid];
 
   const next = () => setStep((s) => Math.min(s + 1, 2));
   const back = () => setStep((s) => Math.max(s - 1, 0));
@@ -224,6 +236,7 @@ export default function SportsMassage() {
 
   return (
     <div
+      ref={topRef}
       className="-mx-4 sm:-mx-6 -mt-4 sm:-mt-6 min-h-screen pb-32 md:pb-16"
       style={{ background: THEME.bg }}
     >
@@ -255,8 +268,7 @@ export default function SportsMassage() {
             className="text-sm max-w-md mx-auto leading-relaxed"
             style={{ color: "#a3a3a3" }}
           >
-            MET &amp; PNF stretching for athletes who train hard. Male
-            specialist only.
+            MET &amp; PNF stretching for athletes who train hard.
           </p>
         </div>
 
@@ -305,15 +317,82 @@ export default function SportsMassage() {
             backdropFilter: "blur(10px)",
           }}
         >
-          {/* ─────── STEP 0: Recovery setup ─────── */}
+          {/* ── STEP 0 ── */}
           {step === 0 && (
             <div className="space-y-8">
+              {/* Therapist info card — driven by SPORTS_THERAPISTS */}
+              <div
+                className="rounded-2xl p-5"
+                style={{
+                  background:
+                    "linear-gradient(135deg,rgba(249,115,22,0.1),rgba(239,68,68,0.05))",
+                  border: "1px solid rgba(249,115,22,0.25)",
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: "rgba(249,115,22,0.2)" }}
+                  >
+                    <UserCheck
+                      className="w-5 h-5"
+                      style={{ color: THEME.accent }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="font-bold text-white text-sm mb-1"
+                      style={{
+                        fontFamily: "Cormorant Garamond",
+                        fontSize: "1.05rem",
+                      }}
+                    >
+                      {therapistInfo.headline}
+                    </p>
+                    <p
+                      className="text-xs leading-relaxed"
+                      style={{ color: "#a3a3a3" }}
+                    >
+                      {therapistInfo.detail}
+                    </p>
+                    {therapistInfo.list.length > 1 && (
+                      <ul
+                        className="mt-3 pt-3 space-y-1.5"
+                        style={{ borderTop: "1px solid rgba(249,115,22,0.15)" }}
+                      >
+                        {therapistInfo.list.map((t) => (
+                          <li
+                            key={t.name}
+                            className="flex items-center gap-2 text-xs"
+                            style={{ color: "#d4d4d4" }}
+                          >
+                            <span style={{ color: THEME.accent }}>•</span>
+                            <span className="font-semibold text-white">
+                              {t.name}
+                            </span>
+                            <span style={{ color: "#737373" }}>· {t.role}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Location */}
               <Section title="Location">
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { id: "studio", l: "Home Studio", note: "Pay online" },
-                    { id: "mobile", l: "Mobile", note: "Pay after" },
+                    {
+                      id: "studio",
+                      l: LOCATION_LABEL.studio,
+                      note: "Pay online",
+                    },
+                    {
+                      id: "mobile",
+                      l: LOCATION_LABEL.mobile,
+                      note: "Pay after session",
+                    },
                   ].map((o) => (
                     <button
                       key={o.id}
@@ -330,11 +409,10 @@ export default function SportsMassage() {
                             : "transparent",
                       }}
                     >
-                      <p className="font-bold text-white text-sm">{o.l}</p>
-                      <p
-                        className="text-xs mt-0.5"
-                        style={{ color: "#737373" }}
-                      >
+                      <p className="font-bold text-white text-sm leading-tight">
+                        {o.l}
+                      </p>
+                      <p className="text-xs mt-1" style={{ color: "#737373" }}>
                         {o.note}
                       </p>
                     </button>
@@ -506,7 +584,7 @@ export default function SportsMassage() {
             </div>
           )}
 
-          {/* ─────── STEP 1: Schedule ─────── */}
+          {/* ── STEP 1 ── */}
           {step === 1 && (
             <div className="space-y-6">
               <Section title="Pick a date">
@@ -515,7 +593,7 @@ export default function SportsMassage() {
                 </div>
               </Section>
 
-              {date && (
+              {date ? (
                 <Section title="Pick a time">
                   <SlotGrid
                     available={available}
@@ -525,9 +603,7 @@ export default function SportsMassage() {
                     serviceType={svcType}
                   />
                 </Section>
-              )}
-
-              {!date && (
+              ) : (
                 <p
                   className="text-xs text-center py-6"
                   style={{ color: "#525252" }}
@@ -538,7 +614,7 @@ export default function SportsMassage() {
             </div>
           )}
 
-          {/* ─────── STEP 2: Confirm ─────── */}
+          {/* ── STEP 2 ── */}
           {step === 2 && (
             <div className="space-y-6">
               <Section title="Your details">
@@ -604,7 +680,11 @@ export default function SportsMassage() {
                 </p>
                 <SummaryRow
                   label="Location"
-                  value={svcType === "studio" ? "Home Studio" : "Mobile"}
+                  value={
+                    svcType === "studio"
+                      ? LOCATION_LABEL.studio
+                      : LOCATION_LABEL.mobile
+                  }
                 />
                 {sportType && <SummaryRow label="Sport" value={sportType} />}
                 <SummaryRow
@@ -636,15 +716,18 @@ export default function SportsMassage() {
               <div
                 className="flex items-start gap-2 p-3 rounded-xl text-xs leading-relaxed"
                 style={{
-                  background: "rgba(234,88,12,0.08)",
-                  border: "1px solid rgba(234,88,12,0.25)",
-                  color: "#fdba74",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "#a3a3a3",
                 }}
               >
-                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <UserCheck
+                  className="w-4 h-4 flex-shrink-0 mt-0.5"
+                  style={{ color: THEME.accent }}
+                />
                 <span>
-                  Sports Massage is performed by our male specialist only. If
-                  you have acute injury, please consult a physician first.
+                  <b className="text-white">{therapistInfo.headline}.</b>{" "}
+                  {therapistInfo.detail}
                 </span>
               </div>
             </div>
@@ -670,7 +753,7 @@ export default function SportsMassage() {
             <button
               onClick={next}
               disabled={!stepValid[step]}
-              className="flex-1 py-4 rounded-2xl font-black text-sm tracking-wider uppercase transition-all"
+              className="flex-1 py-4 rounded-2xl font-black text-sm tracking-wider uppercase transition-all flex items-center justify-center gap-2"
               style={{
                 background: stepValid[step]
                   ? `linear-gradient(135deg,${THEME.accent},${THEME.accent2})`
@@ -682,7 +765,7 @@ export default function SportsMassage() {
                   : "none",
               }}
             >
-              Continue
+              Continue <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
             <button
