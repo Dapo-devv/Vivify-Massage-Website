@@ -1199,9 +1199,6 @@ const VivifySpaWebsite = () => {
     }
   };
 
-  const scrollTo = (id) =>
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-
   const switchTab = (id) => {
     setActiveTab(id);
     if (id === "booking" && bookingCity === "ilorin") {
@@ -1209,12 +1206,15 @@ const VivifySpaWebsite = () => {
     } else if (id === "booking") {
       setBookingCity(null);
     }
-    scrollTo("main");
+    // FIX: Scroll window to the very top on tab switch
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSelectService = (serviceId) => {
     setPreselectedService(serviceId);
-    scrollTo("wizard-start");
+    document
+      .getElementById("wizard-start")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   const hideHero =

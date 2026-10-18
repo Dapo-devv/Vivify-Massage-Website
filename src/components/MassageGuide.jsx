@@ -1,5 +1,5 @@
 import { Sparkles, ArrowRight } from "lucide-react";
-import { SERVICES, fmt, getPrice } from "../config/services";
+import { SERVICES } from "../config/services";
 
 export default function MassageGuide({ onSelectService }) {
   return (
@@ -8,11 +8,15 @@ export default function MassageGuide({ onSelectService }) {
         <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-4 text-xs font-bold tracking-wider uppercase bg-white/10 text-white border border-white/20">
           <Sparkles className="w-3.5 h-3.5" /> Find Your Perfect Massage
         </div>
-        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2" style={{ fontFamily: "Cormorant Garamond" }}>
+        <h2
+          className="text-2xl sm:text-3xl font-bold text-white mb-2"
+          style={{ fontFamily: "Cormorant Garamond" }}
+        >
           Not sure what to book?
         </h2>
         <p className="text-cyan-200 text-sm max-w-md mx-auto">
-          Read about our treatments below to find the one that fits your body's needs.
+          Read about our treatments below to find the one that fits your body's
+          needs.
         </p>
       </div>
 
@@ -27,16 +31,23 @@ export default function MassageGuide({ onSelectService }) {
             }}
           >
             <div className="h-32 w-full relative">
-              <img src={svc.image} alt={svc.name} className="w-full h-full object-cover" />
+              <img
+                src={svc.image}
+                alt={svc.name}
+                className="w-full h-full object-cover"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
               <div className="absolute bottom-3 left-4">
                 <span className="text-2xl">{svc.icon}</span>
-                <h3 className="text-lg font-bold text-white leading-tight" style={{ fontFamily: "Cormorant Garamond" }}>
+                <h3
+                  className="text-lg font-bold text-white leading-tight"
+                  style={{ fontFamily: "Cormorant Garamond" }}
+                >
                   {svc.name}
                 </h3>
               </div>
             </div>
-            
+
             <div className="p-4 flex flex-col flex-1">
               <div className="mb-3">
                 <p className="text-xs font-bold text-cyan-600 uppercase tracking-wider mb-1">
@@ -49,7 +60,7 @@ export default function MassageGuide({ onSelectService }) {
               <p className="text-xs text-gray-500 leading-relaxed mb-4 flex-1">
                 {svc.longDesc}
               </p>
-              
+
               <button
                 onClick={() => onSelectService(svc.id)}
                 className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all flex items-center justify-center gap-2 group"
@@ -57,7 +68,7 @@ export default function MassageGuide({ onSelectService }) {
                   background: "linear-gradient(135deg,#0891b2,#06b6d4)",
                 }}
               >
-                Book This — {fmt(getPrice("studio", svc.id, 60))}
+                Book This Massage
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
