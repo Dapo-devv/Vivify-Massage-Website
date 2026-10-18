@@ -8,13 +8,9 @@ import {
   Gift,
   Crown,
   Check,
-  Heart,
+  ArrowLeft,
   Repeat,
-  Zap,
-  UserCheck,
   Pause,
-  Wallet,
-  Percent,
 } from "lucide-react";
 
 import {
@@ -29,6 +25,8 @@ import {
 
 import { Tick, TF, PF, Modal } from "./components/ui";
 
+import LocationGate from "./components/LocationGate";
+import MassageGuide from "./components/MassageGuide";
 import BookingWizard from "./components/BookingWizard";
 import SportsMassage from "./components/SportsMassage";
 
@@ -69,9 +67,7 @@ const paystackPay = ({ amount, meta, onSuccess, email, ref }) => {
 };
 
 const sendWA = (msg) => {
-  window.location.href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(
-    msg,
-  )}`;
+  window.location.href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -92,9 +88,7 @@ const SBox = ({ rows, hi }) => (
       <div key={l} className="flex justify-between text-sm">
         <span className="text-gray-500 text-xs sm:text-sm">{l}</span>
         <span
-          className={`font-semibold text-right max-w-[58%] truncate ${
-            l === hi ? "text-base sm:text-lg" : ""
-          }`}
+          className={`font-semibold text-right max-w-[58%] truncate ${l === hi ? "text-base sm:text-lg" : ""}`}
           style={
             l === hi
               ? { color: "#0891b2", fontFamily: "Cormorant Garamond" }
@@ -108,8 +102,31 @@ const SBox = ({ rows, hi }) => (
   </div>
 );
 
+const SectionHeading = ({ number, title, hint }) => (
+  <div className="mb-5">
+    <div className="flex items-center gap-2 mb-1">
+      <span
+        className="text-xs font-black tracking-widest"
+        style={{ color: "#db2777" }}
+      >
+        {number}
+      </span>
+      <span className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+        {title}
+      </span>
+    </div>
+    {hint && <p className="text-xs text-gray-400">{hint}</p>}
+  </div>
+);
+
+const SubLabel = ({ children }) => (
+  <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+    {children}
+  </p>
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
-// MEMBERSHIP — single monthly plan
+// MEMBERSHIP
 // ─────────────────────────────────────────────────────────────────────────────
 const MembershipSection = ({ sendEmail }) => {
   const plan = MEMBERSHIP_PLAN;
@@ -192,7 +209,6 @@ const MembershipSection = ({ sendEmail }) => {
 
   return (
     <div className="max-w-2xl mx-auto pb-32 md:pb-16">
-      {/* Hero */}
       <div className="text-center mb-8 px-2">
         <div
           className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-4 text-xs font-bold tracking-wider uppercase"
@@ -218,7 +234,6 @@ const MembershipSection = ({ sendEmail }) => {
         </p>
       </div>
 
-      {/* Plan card */}
       <div
         className="rounded-3xl overflow-hidden mb-6 shadow-2xl"
         style={{
@@ -227,12 +242,9 @@ const MembershipSection = ({ sendEmail }) => {
           border: "2px solid #fde68a",
         }}
       >
-        {/* Plan header */}
         <div
           className="px-6 py-5"
-          style={{
-            background: "linear-gradient(135deg,#0891b2,#06b6d4)",
-          }}
+          style={{ background: "linear-gradient(135deg,#0891b2,#06b6d4)" }}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -252,17 +264,13 @@ const MembershipSection = ({ sendEmail }) => {
             </div>
             <span
               className="text-xs font-bold px-3 py-1 rounded-full flex-shrink-0"
-              style={{
-                background: "#fef3c7",
-                color: "#92400e",
-              }}
+              style={{ background: "#fef3c7", color: "#92400e" }}
             >
               SAVE 10%
             </span>
           </div>
         </div>
 
-        {/* Benefits */}
         <div className="px-6 py-6">
           <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">
             What's included
@@ -283,9 +291,7 @@ const MembershipSection = ({ sendEmail }) => {
             ))}
           </ul>
 
-          {/* Config */}
           <div className="space-y-5 pt-6 border-t border-gray-100">
-            {/* Location */}
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
                 Location
@@ -322,7 +328,6 @@ const MembershipSection = ({ sendEmail }) => {
               </div>
             </div>
 
-            {/* Service */}
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
                 Your monthly massage
@@ -348,7 +353,6 @@ const MembershipSection = ({ sendEmail }) => {
               </div>
             </div>
 
-            {/* Duration */}
             {mSvc && (
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
@@ -385,7 +389,6 @@ const MembershipSection = ({ sendEmail }) => {
               </div>
             )}
 
-            {/* Price preview */}
             {mSvc && mDur && (
               <div
                 className="rounded-2xl p-4 flex items-center justify-between gap-3"
@@ -420,7 +423,6 @@ const MembershipSection = ({ sendEmail }) => {
             )}
           </div>
 
-          {/* Contact */}
           <div className="mt-6 pt-6 border-t border-gray-100">
             <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
               Your details
@@ -457,7 +459,6 @@ const MembershipSection = ({ sendEmail }) => {
             </div>
           </div>
 
-          {/* CTA */}
           <button
             onClick={handleMembership}
             disabled={!mDone}
@@ -481,7 +482,6 @@ const MembershipSection = ({ sendEmail }) => {
         </div>
       </div>
 
-      {/* Small print / reassurance */}
       <div className="grid grid-cols-3 gap-3">
         {[
           { icon: Repeat, l: "Auto-renews", s: "Monthly" },
@@ -517,10 +517,7 @@ const MembershipSection = ({ sendEmail }) => {
           <div className="bg-white rounded-3xl p-8 text-center shadow-2xl mx-4">
             <div
               className="w-14 h-14 rounded-full mx-auto mb-4 animate-spin"
-              style={{
-                border: "3px solid #e5e7eb",
-                borderTopColor: "#06b6d4",
-              }}
+              style={{ border: "3px solid #e5e7eb", borderTopColor: "#06b6d4" }}
             />
             <p
               className="font-bold text-gray-900"
@@ -589,7 +586,7 @@ const MembershipSection = ({ sendEmail }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GIFT CARD — redesigned
+// GIFT CARD
 // ─────────────────────────────────────────────────────────────────────────────
 const GiftCardSection = ({ sendEmail }) => {
   const [gSvcType, setGSvcType] = useState("studio");
@@ -682,7 +679,6 @@ const GiftCardSection = ({ sendEmail }) => {
 
   return (
     <div className="max-w-2xl mx-auto pb-32 md:pb-16">
-      {/* Hero */}
       <div className="text-center mb-8 px-2">
         <div
           className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-4 text-xs font-bold tracking-wider uppercase"
@@ -708,7 +704,6 @@ const GiftCardSection = ({ sendEmail }) => {
         </p>
       </div>
 
-      {/* Live preview card */}
       <div className="mb-6">
         <p className="text-xs font-bold uppercase tracking-wider text-cyan-200 mb-3 px-1">
           Live preview
@@ -769,7 +764,6 @@ const GiftCardSection = ({ sendEmail }) => {
               </div>
               <Gift className="w-5 h-5 text-pink-200" />
             </div>
-
             <p
               className="text-xs uppercase tracking-widest mb-1"
               style={{ color: "#fbcfe8" }}
@@ -782,7 +776,6 @@ const GiftCardSection = ({ sendEmail }) => {
             >
               {gRName || "Their Name"}
             </p>
-
             <p
               className="text-sm italic mb-6 mt-3 px-4 py-3 rounded-2xl"
               style={{
@@ -793,7 +786,6 @@ const GiftCardSection = ({ sendEmail }) => {
             >
               "{gCaption || "Wishing you pure relaxation 💆"}"
             </p>
-
             <div className="flex justify-between items-end pt-4 border-t border-white/20">
               <div>
                 <p className="text-xs" style={{ color: "#fbcfe8" }}>
@@ -832,14 +824,12 @@ const GiftCardSection = ({ sendEmail }) => {
         </div>
       </div>
 
-      {/* Section: Gift details */}
       <FC>
         <SectionHeading
           number="01"
           title="Design the gift"
           hint="Choose the treatment you'd like to give"
         />
-
         <div className="mb-5">
           <SubLabel>Location</SubLabel>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -861,7 +851,6 @@ const GiftCardSection = ({ sendEmail }) => {
             ))}
           </div>
         </div>
-
         <div className="mb-5">
           <SubLabel>Massage</SubLabel>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -888,7 +877,6 @@ const GiftCardSection = ({ sendEmail }) => {
             ))}
           </div>
         </div>
-
         {gSvc && (
           <div className="mb-5">
             <SubLabel>Duration</SubLabel>
@@ -912,7 +900,6 @@ const GiftCardSection = ({ sendEmail }) => {
             </div>
           </div>
         )}
-
         <div>
           <SubLabel>Personal message</SubLabel>
           <textarea
@@ -928,7 +915,6 @@ const GiftCardSection = ({ sendEmail }) => {
         </div>
       </FC>
 
-      {/* Section: Buyer */}
       <div className="mt-5">
         <FC>
           <SectionHeading
@@ -969,7 +955,6 @@ const GiftCardSection = ({ sendEmail }) => {
         </FC>
       </div>
 
-      {/* Section: Recipient */}
       <div className="mt-5">
         <FC>
           <SectionHeading
@@ -1014,7 +999,6 @@ const GiftCardSection = ({ sendEmail }) => {
         </FC>
       </div>
 
-      {/* Pay CTA */}
       <div className="mt-5">
         <FC>
           {gSvc && gPrice() > 0 && (
@@ -1035,16 +1019,12 @@ const GiftCardSection = ({ sendEmail }) => {
               </div>
               <p
                 className="text-3xl font-bold leading-none"
-                style={{
-                  fontFamily: "Cormorant Garamond",
-                  color: "#db2777",
-                }}
+                style={{ fontFamily: "Cormorant Garamond", color: "#db2777" }}
               >
                 {fmt(gPrice())}
               </p>
             </div>
           )}
-
           <button
             onClick={handleGift}
             disabled={!gDone}
@@ -1080,10 +1060,7 @@ const GiftCardSection = ({ sendEmail }) => {
           <div className="bg-white rounded-3xl p-8 text-center shadow-2xl mx-4">
             <div
               className="w-14 h-14 rounded-full mx-auto mb-4 animate-spin"
-              style={{
-                border: "3px solid #e5e7eb",
-                borderTopColor: "#db2777",
-              }}
+              style={{ border: "3px solid #e5e7eb", borderTopColor: "#db2777" }}
             />
             <p
               className="font-bold text-gray-900"
@@ -1117,12 +1094,9 @@ const GiftCardSection = ({ sendEmail }) => {
               ) : null}
             </p>
           </div>
-
           <div
             className="rounded-2xl p-5 mb-4 text-white relative overflow-hidden"
-            style={{
-              background: "linear-gradient(135deg,#db2777,#9d174d)",
-            }}
+            style={{ background: "linear-gradient(135deg,#db2777,#9d174d)" }}
           >
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-4 h-4 text-pink-200" />
@@ -1159,7 +1133,6 @@ const GiftCardSection = ({ sendEmail }) => {
               </p>
             </div>
           </div>
-
           <SBox
             rows={[
               ["Ref", gDetails.ref],
@@ -1168,12 +1141,10 @@ const GiftCardSection = ({ sendEmail }) => {
             ]}
             hi="Value"
           />
-
           <div className="rounded-xl bg-pink-50 border border-pink-200 p-3 mb-4 text-xs text-pink-800 leading-relaxed">
             <b>What's next?</b> We'll reach out to {gDetails.recipientName} to
             arrange their session. You'll both get an email confirmation.
           </div>
-
           <button
             onClick={() =>
               sendWA(
@@ -1197,35 +1168,14 @@ const GiftCardSection = ({ sendEmail }) => {
   );
 };
 
-// ── Section helper components for gift card ──
-const SectionHeading = ({ number, title, hint }) => (
-  <div className="mb-5">
-    <div className="flex items-center gap-2 mb-1">
-      <span
-        className="text-xs font-black tracking-widest"
-        style={{ color: "#db2777" }}
-      >
-        {number}
-      </span>
-      <span className="text-sm font-bold text-gray-900 uppercase tracking-wider">
-        {title}
-      </span>
-    </div>
-    {hint && <p className="text-xs text-gray-400">{hint}</p>}
-  </div>
-);
-
-const SubLabel = ({ children }) => (
-  <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-    {children}
-  </p>
-);
-
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN APP
 // ─────────────────────────────────────────────────────────────────────────────
 const VivifySpaWebsite = () => {
   const [activeTab, setActiveTab] = useState("booking");
+
+  const [bookingCity, setBookingCity] = useState(null);
+  const [preselectedService, setPreselectedService] = useState("");
 
   useEffect(() => {
     if (window.PaystackPop) return;
@@ -1254,10 +1204,21 @@ const VivifySpaWebsite = () => {
 
   const switchTab = (id) => {
     setActiveTab(id);
+    if (id === "booking" && bookingCity === "ilorin") {
+      // Keep ilorin state
+    } else if (id === "booking") {
+      setBookingCity(null);
+    }
     scrollTo("main");
   };
 
-  const hideHero = activeTab === "sports";
+  const handleSelectService = (serviceId) => {
+    setPreselectedService(serviceId);
+    scrollTo("wizard-start");
+  };
+
+  const hideHero =
+    activeTab === "sports" || (activeTab === "booking" && !bookingCity);
 
   return (
     <div
@@ -1272,15 +1233,16 @@ const VivifySpaWebsite = () => {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=Cormorant+Garamond:wght@400;500;600;700&display=swap');
         @keyframes spin { to{transform:rotate(360deg)} }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes slideInFromBottom { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        .animate-in { animation: fadeIn 0.5s ease-out; }
+        .slide-in-from-bottom-4 { animation: slideInFromBottom 0.5s cubic-bezier(.16,1,.3,1); }
         input,textarea,select,button { outline:none; font-family:inherit }
         button { -webkit-tap-highlight-color:transparent }
         * { box-sizing:border-box }
-        @media (max-width:768px){
-          input, textarea, select { font-size: 16px !important; }
-        }
+        @media (max-width:768px){ input, textarea, select { font-size: 16px !important; } }
       `}</style>
 
-      {/* DESKTOP HEADER */}
       <header
         className="hidden md:block sticky top-0 z-40"
         style={{
@@ -1312,9 +1274,7 @@ const VivifySpaWebsite = () => {
               </p>
             </div>
           </div>
-
           <div className="flex-1" />
-
           <nav
             className="flex items-center gap-1 p-1 rounded-2xl"
             style={{ background: "rgba(255,255,255,0.08)" }}
@@ -1345,7 +1305,6 @@ const VivifySpaWebsite = () => {
         </div>
       </header>
 
-      {/* MOBILE HEADER */}
       <header
         className="md:hidden sticky top-0 z-40"
         style={{
@@ -1393,7 +1352,6 @@ const VivifySpaWebsite = () => {
         </div>
       </header>
 
-      {/* HERO */}
       {!hideHero && (
         <section className="py-10 sm:py-16 relative overflow-hidden">
           <div
@@ -1414,8 +1372,8 @@ const VivifySpaWebsite = () => {
                 border: "1px solid rgba(255,255,255,0.2)",
               }}
             >
-              <Star className="w-3.5 h-3.5" fill="currentColor" />
-              Where Recovery Meets Convenience
+              <Star className="w-3.5 h-3.5" fill="currentColor" /> Where
+              Recovery Meets Convenience
             </div>
             <h2
               className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4"
@@ -1435,11 +1393,29 @@ const VivifySpaWebsite = () => {
         </section>
       )}
 
-      {/* MAIN */}
-      <div id="main">
+      <div id="main" className="min-h-screen">
         {activeTab === "booking" && (
           <div className="px-4 sm:px-6">
-            <BookingWizard />
+            {!bookingCity && <LocationGate onSelectCity={setBookingCity} />}
+
+            {bookingCity === "ilorin" && (
+              <div className="animate-in fade-in duration-500">
+                <div className="flex justify-center mb-6">
+                  <button
+                    onClick={() => setBookingCity(null)}
+                    className="text-xs font-semibold text-cyan-200 hover:text-white transition-colors flex items-center gap-1"
+                  >
+                    <ArrowLeft className="w-3 h-3" /> Change Location
+                  </button>
+                </div>
+
+                <MassageGuide onSelectService={handleSelectService} />
+
+                <div id="wizard-start">
+                  <BookingWizard initialService={preselectedService} />
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1458,74 +1434,6 @@ const VivifySpaWebsite = () => {
         )}
       </div>
 
-      {/* TESTIMONIALS */}
-      <section
-        className="py-12 sm:py-16 mt-8"
-        style={{
-          background: "rgba(255,255,255,0.03)",
-          backdropFilter: "blur(4px)",
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-8">
-            <h3
-              className="text-2xl sm:text-3xl font-bold text-white"
-              style={{ fontFamily: "Cormorant Garamond" }}
-            >
-              What Our Clients Say
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[
-              {
-                name: "Abu M.",
-                text: "Had chronic shoulder pain for 6 months. After 3 sessions with Vivify, I'm back to training pain-free.",
-                rating: 5,
-              },
-              {
-                name: "Adeola O.",
-                text: "Having a professional therapist come to my home was incredible. No traffic, just pure relaxation in my own space.",
-                rating: 5,
-              },
-              {
-                name: "Kareem J.",
-                text: "Deep tissue massage that delivered real results. My back pain is significantly better and the staff was incredibly professional.",
-                rating: 5,
-              },
-            ].map((t, i) => (
-              <div
-                key={i}
-                className="rounded-3xl p-5"
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                }}
-              >
-                <div className="flex gap-0.5 mb-3">
-                  {Array(t.rating)
-                    .fill(0)
-                    .map((_, j) => (
-                      <Star
-                        key={j}
-                        className="w-4 h-4 text-amber-400"
-                        fill="currentColor"
-                      />
-                    ))}
-                </div>
-                <p
-                  className="text-sm mb-4 italic leading-relaxed"
-                  style={{ color: "#bae6fd" }}
-                >
-                  "{t.text}"
-                </p>
-                <p className="text-sm font-bold text-white">— {t.name}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FOOTER */}
       <footer
         className="py-10 sm:py-14 pb-32 md:pb-14"
         style={{ background: "#0c1a2e" }}
@@ -1612,7 +1520,6 @@ const VivifySpaWebsite = () => {
         </div>
       </footer>
 
-      {/* MOBILE BOTTOM NAV */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-50"
         style={{
@@ -1630,9 +1537,7 @@ const VivifySpaWebsite = () => {
                 key={t.id}
                 onClick={() => switchTab(t.id)}
                 className="py-3 flex flex-col items-center gap-1 transition-all relative"
-                style={{
-                  color: active ? "white" : "rgba(255,255,255,0.5)",
-                }}
+                style={{ color: active ? "white" : "rgba(255,255,255,0.5)" }}
               >
                 {active && (
                   <div
@@ -1644,9 +1549,7 @@ const VivifySpaWebsite = () => {
                 )}
                 <span
                   className="text-xl transition-transform"
-                  style={{
-                    transform: active ? "scale(1.15)" : "scale(1)",
-                  }}
+                  style={{ transform: active ? "scale(1.15)" : "scale(1)" }}
                 >
                   {t.icon}
                 </span>

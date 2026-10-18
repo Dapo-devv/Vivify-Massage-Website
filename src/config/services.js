@@ -24,6 +24,9 @@ export const SERVICES = [
     icon: "🌿",
     desc: "Gentle, flowing strokes for circulation and calm.",
     benefit: "Deep relaxation, stress management and unwinding.",
+    longDesc:
+      "Our most popular massage. Uses long, gliding strokes with light to medium pressure to help you completely unwind. Perfect for melting away daily stress and improving blood flow.",
+    bestFor: "Stress relief & gentle relaxation",
     badge: "Popular",
     bc: "bg-emerald-100 text-emerald-700",
     image: "/assets/swedish_massage.jpg",
@@ -34,6 +37,9 @@ export const SERVICES = [
     icon: "💪",
     desc: "Targeted pressure to release chronic tension.",
     benefit: "Recovery, relief from body pain, muscle tension and aches.",
+    longDesc:
+      "Targets the deeper layers of muscle and fascia. Uses slow, firm strokes and trigger point therapy to break down adhesions and relieve chronic aches, perfect for active lifestyles.",
+    bestFor: "Muscle tension & pain recovery",
     badge: "Therapeutic",
     bc: "bg-amber-100 text-amber-700",
     image: "/assets/deep_tissue.jpg",
@@ -45,6 +51,9 @@ export const SERVICES = [
     desc: "Head-to-toe treatment combining multiple techniques.",
     benefit:
       "Tailored massage — a custom combination of Swedish and Deep Tissue techniques.",
+    longDesc:
+      "The ultimate spa experience. A head-to-toe treatment where your therapist blends techniques (Swedish, Deep Tissue, and stretching) based on exactly what your body needs that day.",
+    bestFor: "Complete body rejuvenation",
     badge: "Signature",
     bc: "bg-violet-100 text-violet-700",
     image: "/assets/engin_akyurt-massage-7452918_1920.jpg",
@@ -141,40 +150,19 @@ export const MOBILE_SLOTS = [
   "12:00 AM",
 ];
 
-// ─────────────────────────────────────────────────────────────
-// MEMBERSHIP — single monthly plan
-//
-// One massage per month. Aimed at retention clients who want
-// a consistent self-care rhythm without committing to bulk.
-// ─────────────────────────────────────────────────────────────
 export const MEMBERSHIP_PLAN = {
   id: "monthly-essential",
   name: "Monthly Essential",
   tagline: "One massage a month. Every month.",
   sessions: 1,
   icon: "🌿",
-  discountRate: 0.1, // 10% off the base session price
+  discountRate: 0.1,
   benefits: [
-    {
-      icon: "💆",
-      text: "1 massage of your choice, every month",
-    },
-    {
-      icon: "💸",
-      text: "10% off every session — applied automatically",
-    },
-    {
-      icon: "⚡",
-      text: "Priority booking — front of the queue",
-    },
-    {
-      icon: "🧑‍⚕️",
-      text: "Same trusted therapist whenever available",
-    },
-    {
-      icon: "⏸️",
-      text: "Pause or cancel anytime — no lock-in",
-    },
+    { icon: "💆", text: "1 massage of your choice, every month" },
+    { icon: "💸", text: "10% off every session — applied automatically" },
+    { icon: "⚡", text: "Priority booking — front of the queue" },
+    { icon: "🧑‍⚕️", text: "Same trusted therapist whenever available" },
+    { icon: "⏸️", text: "Pause or cancel anytime — no lock-in" },
   ],
 };
 
@@ -210,7 +198,6 @@ export const SPORTS_FOCUS = [
   "Full Body",
 ];
 
-// Helpers
 export const fmt = (n) => `₦${Number(n).toLocaleString()}`;
 export const disc10 = (n) => Math.round(n * 0.9);
 export const getPrice = (type, svc, dur) => PRICING[type]?.[svc]?.[dur] || 0;

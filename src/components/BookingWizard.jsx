@@ -27,12 +27,12 @@ const STEPS = ["Service", "Add-ons", "Therapist", "Date", "Confirm"];
 const WA_NUMBER = "2347040723894";
 const PAYSTACK_KEY = "pk_live_915663b76742c16f999c99e6251596ee7c5c9584";
 
-export default function BookingWizard() {
+export default function BookingWizard({ initialService = "" }) {
   const [step, setStep] = useState(0);
 
   // ── Draft ──
   const [svcType, setSvcType] = useState("studio");
-  const [service, setService] = useState("");
+  const [service, setService] = useState(initialService);
   const [duration, setDuration] = useState("");
   const [addons, setAddons] = useState([]);
   const [therapist, setTherapist] = useState("any");
@@ -51,7 +51,7 @@ export default function BookingWizard() {
   const [success, setSuccess] = useState(false);
   const [booking, setBooking] = useState(null);
 
-  // ── Scroll anchor (fixes "next step opens mid-page") ──
+  // ── Scroll anchor ──
   const topRef = useRef(null);
   useEffect(() => {
     if (!topRef.current) return;
@@ -62,6 +62,17 @@ export default function BookingWizard() {
       headerOffset;
     window.scrollTo({ top: Math.max(y, 0), behavior: "smooth" });
   }, [step]);
+
+  // Handle initial service pre-selection (FIXED ESLINT WARNING)
+  useEffect(() => {
+    if (initialService) {
+      setService(initialService);
+      const opts = durList(initialService);
+      if (opts.length > 0) {
+        setDuration((prev) => (opts.includes(Number(prev)) ? prev : opts[0]));
+      }
+    }
+  }, [initialService]);
 
   const totalDuration = useMemo(() => {
     if (!duration) return 0;
@@ -193,13 +204,7 @@ export default function BookingWizard() {
   ) => {
     const ref =
       existingRef ||
-      `VMS-${new Date()
-        .toISOString()
-        .slice(0, 10)
-        .replace(/-/g, "")}-${Math.random()
-        .toString(36)
-        .slice(2, 7)
-        .toUpperCase()}`;
+      `VMS-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
     try {
       await fetch("/api/send", {
@@ -272,15 +277,8 @@ export default function BookingWizard() {
 
   const sendWA = () => {
     if (!booking) return;
-    const msg =
-      `Hello Vivify! 🌟\n\nRef: ${booking.ref}\n` +
-      `👤 ${booking.customerName}\n` +
-      `💆 ${booking.serviceName} (${booking.duration} min)\n` +
-      `💰 ${fmt(booking.total)}\n\n` +
-      `Please confirm my appointment.`;
-    window.location.href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(
-      msg,
-    )}`;
+    const msg = `Hello Vivify! 🌟\n\nRef: ${booking.ref}\n👤 ${booking.customerName}\n💆 ${booking.serviceName} (${booking.duration} min)\n💰 ${fmt(booking.total)}\n\nPlease confirm my appointment.`;
+    window.location.href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
   };
 
   const ctaLabel = (() => {
@@ -358,7 +356,7 @@ export default function BookingWizard() {
 
         {/* Body */}
         <div className="p-5 sm:p-7">
-          {/* ── STEP 0 ── */}
+          {/* STEP 0 */}
           {step === 0 && (
             <div className="space-y-6">
               <div>
@@ -498,7 +496,7 @@ export default function BookingWizard() {
             </div>
           )}
 
-          {/* ── STEP 1 ── */}
+          {/* STEP 1 */}
           {step === 1 && (
             <div className="space-y-3">
               {ADDONS.map((a) => {
@@ -545,7 +543,7 @@ export default function BookingWizard() {
             </div>
           )}
 
-          {/* ── STEP 2 ── */}
+          {/* STEP 2 */}
           {step === 2 && (
             <div className="space-y-3">
               {THERAPISTS.map((t) => {
@@ -582,14 +580,13 @@ export default function BookingWizard() {
             </div>
           )}
 
-          {/* ── STEP 3 ── */}
+          {/* STEP 3 */}
           {step === 3 && (
             <div className="space-y-6">
               <div>
                 <Label>Date</Label>
                 <DateStrip value={date} onChange={setDate} />
               </div>
-
               {date && (
                 <div>
                   <Label>
@@ -615,7 +612,7 @@ export default function BookingWizard() {
             </div>
           )}
 
-          {/* ── STEP 4 ── */}
+          {/* STEP 4 */}
           {step === 4 && (
             <div className="space-y-6">
               <div>
@@ -790,11 +787,9 @@ export default function BookingWizard() {
                 onClick={back}
                 className="px-5 py-4 rounded-2xl font-bold text-sm border-2 border-gray-200 bg-white text-gray-700 hover:bg-gray-100 transition-all"
               >
-                <ArrowLeft className="w-4 h-4 inline mr-1" />
-                Back
+                <ArrowLeft className="w-4 h-4 inline mr-1" /> Back
               </button>
             )}
-
             {step < 4 ? (
               <>
                 {step === 1 && (
@@ -819,8 +814,7 @@ export default function BookingWizard() {
                       : "none",
                   }}
                 >
-                  Continue
-                  <ArrowRight className="w-4 h-4" />
+                  Continue <ArrowRight className="w-4 h-4" />
                 </button>
               </>
             ) : (
@@ -850,18 +844,12 @@ export default function BookingWizard() {
       {loading && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{
-            background: "rgba(0,0,0,0.6)",
-            backdropFilter: "blur(6px)",
-          }}
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)" }}
         >
           <div className="bg-white rounded-3xl p-8 text-center shadow-2xl mx-4">
             <div
               className="w-14 h-14 rounded-full mx-auto mb-4 animate-spin"
-              style={{
-                border: "3px solid #e5e7eb",
-                borderTopColor: "#06b6d4",
-              }}
+              style={{ border: "3px solid #e5e7eb", borderTopColor: "#06b6d4" }}
             />
             <p
               className="font-bold text-gray-900"
@@ -911,10 +899,7 @@ export default function BookingWizard() {
               </span>
               <span
                 className="text-lg font-bold"
-                style={{
-                  fontFamily: "Cormorant Garamond",
-                  color: "#0891b2",
-                }}
+                style={{ fontFamily: "Cormorant Garamond", color: "#0891b2" }}
               >
                 {fmt(booking.total)}
               </span>
