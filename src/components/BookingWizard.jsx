@@ -53,7 +53,14 @@ export default function BookingWizard({ initialService = "" }) {
 
   // ── Scroll anchor ──
   const topRef = useRef(null);
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
+    // Skip scrolling on the very first load so the MassageGuide stays visible
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     if (!topRef.current) return;
     const headerOffset = window.innerWidth < 768 ? 64 : 88;
     const y =
@@ -63,7 +70,7 @@ export default function BookingWizard({ initialService = "" }) {
     window.scrollTo({ top: Math.max(y, 0), behavior: "smooth" });
   }, [step]);
 
-  // Handle initial service pre-selection (FIXED ESLINT WARNING)
+  // Handle initial service pre-selection
   useEffect(() => {
     if (initialService) {
       setService(initialService);
