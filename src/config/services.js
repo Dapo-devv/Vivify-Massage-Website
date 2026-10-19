@@ -56,7 +56,7 @@ export const SERVICES = [
     bestFor: "Complete body rejuvenation",
     badge: "Signature",
     bc: "bg-violet-100 text-violet-700",
-    image: "/assets/engin_akyurt-massage-7452918_1920.jpg",
+    image: "/assets/full_body.jpg",
   },
 ];
 
