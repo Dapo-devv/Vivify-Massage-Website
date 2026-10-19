@@ -29,7 +29,7 @@ export const SERVICES = [
     bestFor: "Stress relief & gentle relaxation",
     badge: "Popular",
     bc: "bg-emerald-100 text-emerald-700",
-    image: "/public/assets/swedish_massage.jpg",
+    image: "/assets/swedish_massage.jpg",
   },
   {
     id: "deep-tissue",
@@ -42,7 +42,7 @@ export const SERVICES = [
     bestFor: "Muscle tension & pain recovery",
     badge: "Therapeutic",
     bc: "bg-amber-100 text-amber-700",
-    image: "/public/assets/deep_tissue.jpg",
+    image: "/assets/deep_tissue.jpg",
   },
   {
     id: "full-body",
@@ -56,7 +56,7 @@ export const SERVICES = [
     bestFor: "Complete body rejuvenation",
     badge: "Signature",
     bc: "bg-violet-100 text-violet-700",
-    image: "/public/assets/full_body.jpg",
+    image: "/assets/full_body.jpg",
   },
 ];
 
