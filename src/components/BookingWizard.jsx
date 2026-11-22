@@ -147,7 +147,6 @@ export default function BookingWizard({ initialService = "" }) {
         }),
       });
 
-      // Safely parse the response to prevent the generic "Something went wrong" error
       const text = await res.text();
       let data;
       try {
@@ -169,10 +168,11 @@ export default function BookingWizard({ initialService = "" }) {
       }
 
       const amount = payOpt === "full" ? total : Math.round(total * 0.5);
+
       window.PaystackPop.setup({
         key: PAYSTACK_KEY,
         email: email || "customer@vivifymassageandspa.online",
-        amount: Math.round(amount * 100), // Ensure integer
+        amount: Math.round(amount * 100),
         currency: "NGN",
         ref,
         metadata: {
@@ -180,12 +180,13 @@ export default function BookingWizard({ initialService = "" }) {
             { display_name: "Customer", variable_name: "customer", value: name },
           ],
         },
-        callback: async (r) => {
-          await finalizeBooking(r.reference, svcObj, ref);
+        // FIX: Using standard function instead of async arrow function
+        callback: function (response) {
+          finalizeBooking(response.reference, svcObj, ref).catch(console.error);
         },
-        onClose: () => {
+        // FIX: Using standard function instead of arrow function
+        onClose: function () {
           setLoading(false);
-          // Cancel the booking in the database so the slot frees up
           fetch("/api/book", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -206,7 +207,6 @@ export default function BookingWizard({ initialService = "" }) {
     const ref = existingRef || `VMS-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
     try {
-      // Mark as paid in the store if it's a studio booking
       if (svcType === "studio" && paymentRef !== "PAY-AFTER") {
         await fetch("/api/book", {
           method: "POST",

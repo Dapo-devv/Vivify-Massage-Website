@@ -49,20 +49,27 @@ const onPhone = (v, set, setErr) => {
   setErr(d.length > 0 && d.length < 11 ? "Must be 11 digits" : "");
 };
 
-const paystackPay = ({ amount, meta, onSuccess, email, ref }) => {
+const paystackPay = ({ amount, meta, onSuccess, onFailure, email, ref }) => {
   if (!window.PaystackPop) {
     alert("Payment system loading. Please try again in a moment.");
+    if (onFailure) onFailure();
     return;
   }
   window.PaystackPop.setup({
     key: PAYSTACK_KEY,
     email: email || "customer@vivifymassageandspa.online",
-    amount: amount * 100,
+    amount: Math.round(amount * 100),
     currency: "NGN",
     ref: ref || `VMS_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
     metadata: { custom_fields: meta },
-    callback: (res) => onSuccess(res),
-    onClose: () => alert("Payment cancelled. Contact us at 07040723894."),
+    // FIX: Standard function syntax
+    callback: function (res) {
+      onSuccess(res);
+    },
+    onClose: function () {
+      if (onFailure) onFailure();
+      alert("Payment cancelled. Contact us at 07040723894.");
+    },
   }).openIframe();
 };
 
@@ -194,6 +201,7 @@ const MembershipSection = ({ sendEmail }) => {
         setMLoading(false);
         setMSuccess(true);
       },
+      onFailure: () => setMLoading(false),
     });
   };
 
@@ -660,6 +668,7 @@ const GiftCardSection = ({ sendEmail }) => {
         setGLoading(false);
         setGSuccess(true);
       },
+      onFailure: () => setGLoading(false),
     });
   };
 
@@ -1206,7 +1215,6 @@ const VivifySpaWebsite = () => {
     } else if (id === "booking") {
       setBookingCity(null);
     }
-    // FIX: Scroll window to the very top on tab switch
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
