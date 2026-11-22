@@ -56,21 +56,16 @@ export default function BookingWizard({ initialService = "" }) {
   const isFirstRender = useRef(true);
 
   useEffect(() => {
-    // Skip scrolling on the very first load so the MassageGuide stays visible
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
     if (!topRef.current) return;
     const headerOffset = window.innerWidth < 768 ? 64 : 88;
-    const y =
-      topRef.current.getBoundingClientRect().top +
-      window.pageYOffset -
-      headerOffset;
+    const y = topRef.current.getBoundingClientRect().top + window.pageYOffset - headerOffset;
     window.scrollTo({ top: Math.max(y, 0), behavior: "smooth" });
   }, [step]);
 
-  // Handle initial service pre-selection
   useEffect(() => {
     if (initialService) {
       setService(initialService);
@@ -83,20 +78,11 @@ export default function BookingWizard({ initialService = "" }) {
 
   const totalDuration = useMemo(() => {
     if (!duration) return 0;
-    return (
-      Number(duration) +
-      addons.reduce(
-        (a, id) => a + (ADDONS.find((x) => x.id === id)?.minutes || 0),
-        0,
-      )
-    );
+    return Number(duration) + addons.reduce((a, id) => a + (ADDONS.find((x) => x.id === id)?.minutes || 0), 0);
   }, [duration, addons]);
 
   const basePrice = service ? getPrice(svcType, service, duration) : 0;
-  const addonsTotal = addons.reduce(
-    (a, id) => a + (ADDONS.find((x) => x.id === id)?.price || 0),
-    0,
-  );
+  const addonsTotal = addons.reduce((a, id) => a + (ADDONS.find((x) => x.id === id)?.price || 0), 0);
   const total = basePrice + addonsTotal;
 
   const { available, loading: slotsLoading } = useAvailability({
@@ -105,11 +91,7 @@ export default function BookingWizard({ initialService = "" }) {
     minutes: totalDuration || 60,
   });
 
-  const customerValid = !!(
-    name &&
-    phone.replace(/\D/g, "").length >= 11 &&
-    email
-  );
+  const customerValid = !!(name && phone.replace(/\D/g, "").length >= 11 && email);
   const stepValid = [
     !!(svcType && service && duration),
     true,
@@ -134,6 +116,8 @@ export default function BookingWizard({ initialService = "" }) {
   const submitBooking = async () => {
     if (!customerValid) return;
     setLoading(true);
+    let ref = "";
+
     try {
       const svcObj = SERVICES.find((s) => s.id === service);
 
@@ -154,9 +138,7 @@ export default function BookingWizard({ initialService = "" }) {
           time,
           service: svcObj?.name,
           duration,
-          addons: addons.map(
-            (id) => ADDONS.find((x) => x.id === id)?.name || id,
-          ),
+          addons: addons.map((id) => ADDONS.find((x) => x.id === id)?.name || id),
           therapist,
           subtotal: total,
           totalAmount: total,
@@ -164,29 +146,38 @@ export default function BookingWizard({ initialService = "" }) {
           paymentType: payOpt === "full" ? "Full" : "Deposit",
         }),
       });
-      const { ref } = await res.json();
+
+      // Safely parse the response to prevent the generic "Something went wrong" error
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.error("Invalid JSON response from server:", text);
+        throw new Error("Server error. Please ensure the backend API is working.");
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create booking.");
+      }
+
+      ref = data.ref;
 
       if (!window.PaystackPop) {
         setLoading(false);
-        return alert(
-          "Payment system is still loading. Please try again in a moment.",
-        );
+        return alert("Payment system is still loading. Please try again in a moment.");
       }
 
       const amount = payOpt === "full" ? total : Math.round(total * 0.5);
       window.PaystackPop.setup({
         key: PAYSTACK_KEY,
         email: email || "customer@vivifymassageandspa.online",
-        amount: amount * 100,
+        amount: Math.round(amount * 100), // Ensure integer
         currency: "NGN",
         ref,
         metadata: {
           custom_fields: [
-            {
-              display_name: "Customer",
-              variable_name: "customer",
-              value: name,
-            },
+            { display_name: "Customer", variable_name: "customer", value: name },
           ],
         },
         callback: async (r) => {
@@ -194,26 +185,36 @@ export default function BookingWizard({ initialService = "" }) {
         },
         onClose: () => {
           setLoading(false);
+          // Cancel the booking in the database so the slot frees up
+          fetch("/api/book", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "cancel", ref }),
+          }).catch(console.error);
+
           alert("Payment cancelled. You can try again.");
         },
       }).openIframe();
     } catch (e) {
       console.error(e);
       setLoading(false);
-      alert("Something went wrong. Please try again.");
+      alert(e.message || "Something went wrong. Please try again.");
     }
   };
 
-  const finalizeBooking = async (
-    paymentRef = "PAY-AFTER",
-    svcObj,
-    existingRef,
-  ) => {
-    const ref =
-      existingRef ||
-      `VMS-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+  const finalizeBooking = async (paymentRef = "PAY-AFTER", svcObj, existingRef) => {
+    const ref = existingRef || `VMS-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
     try {
+      // Mark as paid in the store if it's a studio booking
+      if (svcType === "studio" && paymentRef !== "PAY-AFTER") {
+        await fetch("/api/book", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "mark_paid", ref, paymentRef }),
+        });
+      }
+
       await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -230,9 +231,7 @@ export default function BookingWizard({ initialService = "" }) {
                 service,
                 svcType,
                 duration,
-                addons: addons.map(
-                  (id) => ADDONS.find((x) => x.id === id)?.name || id,
-                ),
+                addons: addons.map((id) => ADDONS.find((x) => x.id === id)?.name || id),
                 therapist,
                 date,
                 time,
@@ -311,8 +310,7 @@ export default function BookingWizard({ initialService = "" }) {
                         ? "linear-gradient(135deg,#0891b2,#06b6d4)"
                         : "rgba(255,255,255,0.15)",
                   color: step >= i ? "white" : "rgba(255,255,255,0.5)",
-                  boxShadow:
-                    step === i ? "0 4px 12px rgba(6,182,212,0.4)" : "none",
+                  boxShadow: step === i ? "0 4px 12px rgba(6,182,212,0.4)" : "none",
                 }}
               >
                 {step > i ? <Check className="w-3.5 h-3.5" /> : i + 1}

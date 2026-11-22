@@ -1,6 +1,6 @@
 // api/slots.js — GET /api/slots?date=YYYY-MM-DD&serviceType=studio&minutes=90
-import { findBookings } from "./_store.js";
-import { STUDIO_SLOTS, MOBILE_SLOTS, CLOSE_HOUR } from "./_constants.js";
+import { findBookings } from "./store.js";
+import { STUDIO_SLOTS, MOBILE_SLOTS, CLOSE_HOUR } from "./constants.js";
 
 function to24(t) {
   const [time, ap] = t.split(" ");
@@ -13,9 +13,7 @@ function to24(t) {
 export default function handler(req, res) {
   const { date, serviceType = "studio", minutes = 60 } = req.query || {};
 
-  if (!date) {
-    return res.status(400).json({ error: "date required" });
-  }
+  if (!date) return res.status(400).json({ error: "date required" });
   if (serviceType !== "studio" && serviceType !== "mobile") {
     return res.status(400).json({ error: "invalid serviceType" });
   }
