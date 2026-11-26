@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Activity, Target, Check, ArrowLeft, ArrowRight, UserCheck, AlertCircle } from "lucide-react";
+import { Activity, Target, Check, ArrowLeft, ArrowRight, UserCheck } from "lucide-react";
 import {
   PRICING, fmt, SPORTS_TECHNIQUES, SPORTS_DURATIONS, SPORTS_FOCUS, LOCATION_LABEL, getSportsTherapistInfo,
 } from "../config/services";
@@ -40,9 +40,14 @@ export default function SportsMassage({ showToast }) {
     window.scrollTo({ top: Math.max(y, 0), behavior: "smooth" });
   }, [step]);
 
-  // Dynamic price based on technique
-  const getPricingKey = () => technique === "deep-tissue-sports" ? "deep-tissue-sports" : "sports";
-  const price = PRICING[svcType]?.[getPricingKey()]?.[duration] || 0;
+  // ── EXPLICIT PRICING LOGIC ──
+  // If the user selects "deep-tissue-sports", it pulls the new price. Otherwise, it uses standard sports pricing.
+  const isDeepTissueSports = technique === "deep-tissue-sports";
+  const pricingKey = isDeepTissueSports ? "deep-tissue-sports" : "sports";
+
+  const currentPrice = PRICING[svcType]?.[pricingKey]?.[duration] || 0;
+  const price60 = PRICING[svcType]?.[pricingKey]?.[60] || 0;
+  const price90 = PRICING[svcType]?.[pricingKey]?.[90] || 0;
 
   const techniqueObj = SPORTS_TECHNIQUES.find((t) => t.id === technique);
   const therapistInfo = getSportsTherapistInfo();
@@ -80,7 +85,7 @@ export default function SportsMassage({ showToast }) {
           date, time, service: "Sports Massage", technique: techniqueObj?.name,
           techniqueFull: techniqueObj?.fullName, minutes: duration, focus,
           sportType, injuries: recoveryNotes, therapist: "male",
-          paymentAmount: price, subtotal: price,
+          paymentAmount: currentPrice, subtotal: currentPrice,
           paymentType: svcType === "studio" ? "Full" : "Pay After Session",
         }),
       });
@@ -102,13 +107,13 @@ export default function SportsMassage({ showToast }) {
               data: {
                 ref, customerName: name, customerPhone: phone, email, serviceType: svcType,
                 date, time, technique: techniqueObj?.name, techniqueFull: techniqueObj?.fullName,
-                minutes: duration, focus, sportType, injuries: recoveryNotes, price, paymentRef,
+                minutes: duration, focus, sportType, injuries: recoveryNotes, price: currentPrice, paymentRef,
               },
             }),
           });
         } catch (err) { console.error("Email failed:", err); }
 
-        setBooking({ ref, customerName: name, technique: techniqueObj?.name, minutes: duration, focus, price });
+        setBooking({ ref, customerName: name, technique: techniqueObj?.name, minutes: duration, focus, price: currentPrice });
         setLoading(false);
         setSuccess(true);
       };
@@ -123,7 +128,7 @@ export default function SportsMassage({ showToast }) {
       window.PaystackPop.setup({
         key: PAYSTACK_KEY,
         email: email || "athlete@vivifymassageandspa.online",
-        amount: Math.round(price * 100),
+        amount: Math.round(currentPrice * 100),
         currency: "NGN",
         ref,
         metadata: { custom_fields: [{ display_name: "Athlete", variable_name: "athlete", value: name }] },
@@ -149,7 +154,7 @@ export default function SportsMassage({ showToast }) {
     setRecoveryNotes(""); setDate(""); setTime(""); setName(""); setPhone(""); setEmail(""); setPhoneErr("");
   };
 
-  const ctaLabel = svcType === "studio" ? `Pay ${fmt(price)}` : "Confirm Appointment";
+  const ctaLabel = svcType === "studio" ? `Pay ${fmt(currentPrice)}` : "Confirm Appointment";
 
   return (
     <div ref={topRef} className="max-w-3xl mx-auto py-12 px-4 sm:px-6 animate-luxe">
@@ -239,13 +244,13 @@ export default function SportsMassage({ showToast }) {
               <Label>Session Duration</Label>
               <div className="grid grid-cols-2 gap-3">
                 {SPORTS_DURATIONS.map((m) => {
-                  const p = PRICING[svcType]?.[getPricingKey()]?.[m] || 0;
                   const sel = duration === m;
+                  const displayPrice = m === 60 ? price60 : price90;
                   return (
                     <button key={m} onClick={() => setDuration(m)} className="p-5 rounded-xl border-2 text-center transition-all" style={{ borderColor: sel ? "#4A5D4E" : "#E8EDE6", background: sel ? "#F9F6F0" : "white" }}>
                       <p className={`text-2xl font-bold ${sel ? "text-[#2C3531]" : "text-[#5A6B5D]"}`} style={{ fontFamily: "Cormorant Garamond" }}>{m}</p>
                       <p className="text-[10px] text-[#A3B19B] uppercase tracking-wider mb-2 font-bold">Minutes</p>
-                      <p className="text-lg font-bold text-[#4A5D4E]" style={{ fontFamily: "Cormorant Garamond" }}>{fmt(p)}</p>
+                      <p className="text-lg font-bold text-[#4A5D4E]" style={{ fontFamily: "Cormorant Garamond" }}>{fmt(displayPrice)}</p>
                     </button>
                   );
                 })}
@@ -314,7 +319,7 @@ export default function SportsMassage({ showToast }) {
 
               <div className="flex justify-between items-center pt-4 mt-4 border-t border-[#E8EDE6]">
                 <span className="text-sm font-bold text-[#2C3531] uppercase tracking-widest">Total</span>
-                <span className="text-3xl font-bold text-[#4A5D4E]" style={{ fontFamily: "Cormorant Garamond" }}>{fmt(price)}</span>
+                <span className="text-3xl font-bold text-[#4A5D4E]" style={{ fontFamily: "Cormorant Garamond" }}>{fmt(currentPrice)}</span>
               </div>
             </div>
           </div>
