@@ -307,7 +307,7 @@ const MembershipSection = ({ sendEmail, showToast }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GIFT CARD (Editorial Styling)
+// GIFT CARD
 // ─────────────────────────────────────────────────────────────────────────────
 const GiftCardSection = ({ sendEmail, showToast }) => {
   const [gSvcType, setGSvcType] = useState("studio");
@@ -540,9 +540,10 @@ const GiftCardSection = ({ sendEmail, showToast }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAIN APP
+// MAIN APP (Controls the whole website)
 // ─────────────────────────────────────────────────────────────────────────────
 const VivifySpaWebsite = () => {
+  // State to control which tab is open (Defaults to "booking" so the Home page shows first)
   const [activeTab, setActiveTab] = useState("booking");
   const [bookingCity, setBookingCity] = useState(null);
   const [preselectedService, setPreselectedService] = useState("");
@@ -576,7 +577,8 @@ const VivifySpaWebsite = () => {
     document.getElementById("wizard-start")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const hideHero = activeTab === "sports" || (activeTab === "booking" && !bookingCity);
+  // Hero is only hidden on the Sports and Gift Card pages for a focused booking experience
+  const hideHero = activeTab === "sports" || activeTab === "giftcard";
 
   return (
     <div className="min-h-screen bg-[#F9F6F0] text-[#2C3531]" style={{ fontFamily: "'DM Sans',system-ui,sans-serif" }}>
@@ -637,7 +639,7 @@ const VivifySpaWebsite = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section (Shows on Home) */}
       {!hideHero && (
         <section className="pt-16 pb-24 sm:pt-24 sm:pb-32 px-6 relative overflow-hidden flex flex-col items-center justify-center text-center">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[#E8EDE6] rounded-full blur-3xl opacity-40 -z-10" />
@@ -654,7 +656,10 @@ const VivifySpaWebsite = () => {
         </section>
       )}
 
+      {/* Main Content Area (Switches based on Tab) */}
       <div id="main" className="min-h-screen">
+
+        {/* TAB 1: HOME / BOOKING */}
         {activeTab === "booking" && (
           <div className="px-4 sm:px-6">
             {!bookingCity && <LocationGate onSelectCity={setBookingCity} />}
@@ -681,14 +686,17 @@ const VivifySpaWebsite = () => {
           </div>
         )}
 
+        {/* TAB 2: SPORTS */}
         {activeTab === "sports" && <SportsMassage showToast={showToast} />}
 
+        {/* TAB 3: MEMBERSHIP */}
         {activeTab === "membership" && (
           <div className="px-4 sm:px-6 pt-12">
             <MembershipSection sendEmail={sendEmail} showToast={showToast} />
           </div>
         )}
 
+        {/* TAB 4: GIFT CARD */}
         {activeTab === "giftcard" && (
           <div className="px-4 sm:px-6 pt-12">
             <GiftCardSection sendEmail={sendEmail} showToast={showToast} />
