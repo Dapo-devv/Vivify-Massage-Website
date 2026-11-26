@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Phone, MapPin, Sparkles, Shield, Star, Gift, Crown, Check, ArrowLeft, Repeat, Pause, AlertCircle } from "lucide-react";
-import { SERVICES, MEMBERSHIP_PLAN, fmt, disc10, getPrice, durList, LOCATION_LABEL } from "./config/services";
+import { Phone, MapPin, Sparkles, Shield, Star, Gift, Crown, Check, ArrowLeft, Repeat, Pause, AlertCircle, ShoppingBag } from "lucide-react";
+import { SERVICES, MEMBERSHIP_PLAN, fmt, getPrice, durList, LOCATION_LABEL } from "./config/services";
 import { Tick, TF, PF, Modal } from "./components/ui";
 import LocationGate from "./components/LocationGate";
 import MassageGuide from "./components/MassageGuide";
@@ -95,13 +95,14 @@ const SubLabel = ({ children }) => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MEMBERSHIP (Editorial Styling)
+// MEMBERSHIP (UPDATED WITH 1x vs 2x logic)
 // ─────────────────────────────────────────────────────────────────────────────
 const MembershipSection = ({ sendEmail, showToast }) => {
   const plan = MEMBERSHIP_PLAN;
   const [mSvcType, setMSvcType] = useState("studio");
   const [mSvc, setMSvc] = useState("");
   const [mDur, setMDur] = useState("");
+  const [mSessions, setMSessions] = useState(1); // 1 or 2 sessions per month
   const [mName, setMName] = useState("");
   const [mPhone, setMPhone] = useState("");
   const [mEmail, setMEmail] = useState("");
@@ -110,9 +111,14 @@ const MembershipSection = ({ sendEmail, showToast }) => {
   const [mSuccess, setMSuccess] = useState(false);
   const [mDetails, setMDetails] = useState(null);
 
-  const mBase = () => getPrice(mSvcType, mSvc, mDur);
-  const mTotal = () => disc10(mBase());
-  const mSaved = () => mBase() - mTotal();
+  // Pricing logic
+  const basePrice = getPrice(mSvcType, mSvc, mDur);
+  const totalWithoutDiscount = basePrice * mSessions;
+
+  // Apply 5% discount only if 2 sessions
+  const discountAmount = mSessions === 2 ? totalWithoutDiscount * 0.05 : 0;
+  const finalMonthlyPrice = Math.round(totalWithoutDiscount - discountAmount);
+
   const mDone = !!(mSvc && mSvcType && mName && mPhone && mPhone.replace(/\D/g, "").length >= 11 && mEmail && mDur);
 
   useEffect(() => { if (mSvc && mDur && !durList(mSvc).includes(Number(mDur))) setMDur(""); }, [mSvc, mDur]);
@@ -121,9 +127,16 @@ const MembershipSection = ({ sendEmail, showToast }) => {
     if (!mDone) return showToast("Please complete all fields.");
     setMLoading(true);
     const svcObj = SERVICES.find((s) => s.id === mSvc);
-    const data = { name: mName, phone: mPhone, email: mEmail, plan: plan.name, service: svcObj?.name, location: LOCATION_LABEL[mSvcType], duration: `${mDur} minutes`, sessions: plan.sessions, normalPrice: mBase(), discountedPerSession: mTotal(), monthlyAmount: mTotal(), savedPerMonth: mSaved() };
+
+    const data = {
+      name: mName, phone: mPhone, email: mEmail, plan: `${plan.name} (${mSessions}x/month)`,
+      service: svcObj?.name, location: LOCATION_LABEL[mSvcType], duration: `${mDur} minutes`,
+      sessions: mSessions, normalPrice: totalWithoutDiscount,
+      monthlyAmount: finalMonthlyPrice, savedPerMonth: discountAmount
+    };
+
     paystackPay({
-      amount: mTotal(), email: mEmail,
+      amount: finalMonthlyPrice, email: mEmail,
       meta: [{ display_name: "Member", variable_name: "member", value: mName }],
       onSuccess: async (res) => {
         const u = { ...data, ref: res.reference };
@@ -146,7 +159,7 @@ const MembershipSection = ({ sendEmail, showToast }) => {
           A ritual a month. <br />
           <span className="italic text-[#C8795D]">A lifetime of balance.</span>
         </h2>
-        <p className="text-[#5A6B5D] text-lg max-w-lg mx-auto font-light">Prioritize your well-being with our exclusive membership. Book whenever it suits you — your spot is always reserved.</p>
+        <p className="text-[#5A6B5D] text-lg max-w-lg mx-auto font-light">Prioritize your well-being with our exclusive membership. Book whenever it suits you.</p>
       </div>
 
       <div className="rounded-[2.5rem] overflow-hidden mb-10 shadow-2xl border border-[#E8EDE6] bg-white">
@@ -159,7 +172,6 @@ const MembershipSection = ({ sendEmail, showToast }) => {
                 <p className="text-xs text-[#E8EDE6] mt-1 font-medium">{plan.tagline}</p>
               </div>
             </div>
-            <span className="text-xs font-black px-5 py-2 rounded-full bg-[#C8795D] text-white shadow-lg">SAVE 10%</span>
           </div>
         </div>
 
@@ -174,13 +186,29 @@ const MembershipSection = ({ sendEmail, showToast }) => {
           </ul>
 
           <div className="space-y-8 pt-8 border-t border-[#F4F1E9]">
+
+            {/* 1x vs 2x Toggle */}
+            <div>
+              <SubLabel>How many sessions per month?</SubLabel>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button onClick={() => setMSessions(1)} className="p-5 rounded-2xl border-2 text-left transition-all relative overflow-hidden" style={{ borderColor: mSessions === 1 ? "#4A5D4E" : "#E8EDE6", background: mSessions === 1 ? "#F9F6F0" : "white" }}>
+                  <p className="font-bold text-[#2C3531] text-sm">1 Session / Month</p>
+                  <p className="text-xs text-[#5A6B5D] mt-1">Standard rate</p>
+                </button>
+                <button onClick={() => setMSessions(2)} className="p-5 rounded-2xl border-2 text-left transition-all relative overflow-hidden" style={{ borderColor: mSessions === 2 ? "#4A5D4E" : "#E8EDE6", background: mSessions === 2 ? "#F9F6F0" : "white" }}>
+                  <div className="absolute top-0 right-0 bg-[#C8795D] text-white text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-bl-lg">Save 5%</div>
+                  <p className="font-bold text-[#2C3531] text-sm">2 Sessions / Month</p>
+                  <p className="text-xs text-[#C8795D] mt-1 font-medium">Discounted rate</p>
+                </button>
+              </div>
+            </div>
+
             <div>
               <SubLabel>Location Preference</SubLabel>
               <div className="grid grid-cols-2 gap-4">
-                {[{ id: "studio", l: LOCATION_LABEL.studio, s: "Pay online" }, { id: "mobile", l: LOCATION_LABEL.mobile, s: "Pay online too" }].map((o) => (
-                  <button key={o.id} onClick={() => setMSvcType(o.id)} className="p-5 rounded-2xl border-2 text-left transition-all duration-200" style={{ borderColor: mSvcType === o.id ? "#4A5D4E" : "#E8EDE6", background: mSvcType === o.id ? "#F9F6F0" : "white" }}>
+                {[{ id: "studio", l: LOCATION_LABEL.studio }, { id: "mobile", l: LOCATION_LABEL.mobile }].map((o) => (
+                  <button key={o.id} onClick={() => setMSvcType(o.id)} className="p-4 rounded-xl border-2 text-left transition-all duration-200" style={{ borderColor: mSvcType === o.id ? "#4A5D4E" : "#E8EDE6", background: mSvcType === o.id ? "#F9F6F0" : "white" }}>
                     <p className="font-bold text-[#2C3531] text-sm">{o.l}</p>
-                    <p className={`text-xs mt-1 font-medium ${mSvcType === o.id ? "text-[#4A5D4E]" : "text-[#A3B19B]"}`}>{o.s}</p>
                   </button>
                 ))}
               </div>
@@ -204,12 +232,12 @@ const MembershipSection = ({ sendEmail, showToast }) => {
                 <SubLabel>Session Length</SubLabel>
                 <div className="grid grid-cols-3 gap-3">
                   {durList(mSvc).map((m) => {
-                    const base = getPrice(mSvcType, mSvc, m); const dp = disc10(base); const sel = mDur === m;
+                    const p = getPrice(mSvcType, mSvc, m);
+                    const sel = mDur === m;
                     return (
                       <button key={m} onClick={() => setMDur(m)} className="p-4 rounded-xl border-2 text-center transition-all duration-200" style={{ borderColor: sel ? "#4A5D4E" : "#E8EDE6", background: sel ? "#F9F6F0" : "white" }}>
                         <p className={`font-bold text-sm ${sel ? "text-[#2C3531]" : "text-[#5A6B5D]"}`}>{m} min</p>
-                        <p className="text-[10px] text-[#A3B19B] line-through mt-1">{fmt(base)}</p>
-                        <p className="text-sm font-bold text-[#4A5D4E]">{fmt(dp)}</p>
+                        <p className="text-[10px] text-[#A3B19B] mt-1">{fmt(p)} per session</p>
                       </button>
                     );
                   })}
@@ -220,12 +248,12 @@ const MembershipSection = ({ sendEmail, showToast }) => {
             {mSvc && mDur && (
               <div className="rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#F9F6F0] border border-[#E8EDE6] animate-luxe">
                 <div className="text-center sm:text-left">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#4A5D4E] mb-1">Your Monthly Fee</p>
-                  <p className="text-xs text-[#5A6B5D] font-medium">Billed monthly · cancel anytime</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#4A5D4E] mb-1">Monthly Fee</p>
+                  <p className="text-xs text-[#5A6B5D] font-medium">{mSessions} session{mSessions > 1 ? 's' : ''} / month · cancel anytime</p>
                 </div>
                 <div className="text-center sm:text-right">
-                  <p className="text-4xl font-bold leading-none text-[#4A5D4E]" style={{ fontFamily: "Cormorant Garamond" }}>{fmt(mTotal())}</p>
-                  <p className="text-xs text-[#C8795D] font-bold mt-2">You save {fmt(mSaved())}/mo</p>
+                  <p className="text-4xl font-bold leading-none text-[#4A5D4E]" style={{ fontFamily: "Cormorant Garamond" }}>{fmt(finalMonthlyPrice)}</p>
+                  {mSessions === 2 && <p className="text-xs text-[#C8795D] font-bold mt-2">You save {fmt(discountAmount)}/mo</p>}
                 </div>
               </div>
             )}
@@ -245,20 +273,10 @@ const MembershipSection = ({ sendEmail, showToast }) => {
 
           <button onClick={handleMembership} disabled={!mDone} className="w-full mt-10 py-5 rounded-2xl font-bold text-sm text-white transition-all duration-200 flex items-center justify-center gap-2 shadow-xl disabled:shadow-none" style={{ background: mDone ? "#4A5D4E" : "#E8EDE6", color: mDone ? "white" : "#A3B19B", cursor: mDone ? "pointer" : "not-allowed" }}>
             <Crown className="w-4 h-4" />
-            {mSvc && mDur ? `Join Club — ${fmt(mTotal())}/mo` : "Join The Club"}
+            {mSvc && mDur ? `Join Club — ${fmt(finalMonthlyPrice)}/mo` : "Join The Club"}
           </button>
           <p className="text-xs text-center text-[#A3B19B] mt-5 font-medium flex items-center justify-center gap-1.5"><Shield className="w-3 h-3" /> Secure via Paystack · Cancel anytime</p>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[{ icon: Repeat, l: "Auto-renews", s: "Monthly" }, { icon: Pause, l: "Pause anytime", s: "No penalty" }, { icon: Shield, l: "Secure billing", s: "Paystack" }].map(({ icon: Icon, l, s }) => (
-          <div key={l} className="rounded-2xl p-5 text-center bg-white border border-[#E8EDE6] shadow-sm">
-            <Icon className="w-5 h-5 mx-auto mb-3 text-[#4A5D4E]" />
-            <p className="text-sm font-bold text-[#2C3531]">{l}</p>
-            <p className="text-[10px] text-[#A3B19B] mt-1 uppercase tracking-wider">{s}</p>
-          </div>
-        ))}
       </div>
 
       {mLoading && (
@@ -569,7 +587,6 @@ const VivifySpaWebsite = () => {
     document.getElementById("wizard-start")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Determine if we show the giant hero. We hide it on Sports or if we are in the booking flow.
   const hideHero = activeTab === "sports" || (activeTab === "booking" && !bookingCity);
 
   return (
@@ -631,7 +648,7 @@ const VivifySpaWebsite = () => {
         </div>
       </header>
 
-      {/* Hero Section (Editorial Style) */}
+      {/* Hero Section */}
       {!hideHero && (
         <section className="pt-16 pb-24 sm:pt-24 sm:pb-32 px-6 relative overflow-hidden flex flex-col items-center justify-center text-center">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[#E8EDE6] rounded-full blur-3xl opacity-40 -z-10" />
@@ -661,7 +678,6 @@ const VivifySpaWebsite = () => {
                   </button>
                 </div>
 
-                {/* The Advanced Replacement for "Read about our treatments" */}
                 <MassageGuide onSelectService={handleSelectService} />
 
                 <div id="wizard-start" className="py-12 bg-white/50 border-t border-[#E8EDE6]">
@@ -691,7 +707,7 @@ const VivifySpaWebsite = () => {
         )}
       </div>
 
-      {/* Elegant Footer */}
+      {/* Footer */}
       <footer className="pt-20 pb-32 md:pb-12 bg-white border-t border-[#E8EDE6] mt-20">
         <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           <div className="lg:col-span-2">
@@ -724,7 +740,7 @@ const VivifySpaWebsite = () => {
         </div>
       </footer>
 
-      {/* Mobile Bottom Nav (Elegant Light Theme) */}
+      {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-[#E8EDE6] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         <div className="grid grid-cols-4 px-2 py-3">
           {TABS.map((t) => {

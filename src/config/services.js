@@ -1,256 +1,114 @@
-// ─────────────────────────────────────────────────────────────
-// Vivify — single source of truth for services, pricing, addons
-// ─────────────────────────────────────────────────────────────
-
-export const PRICING = {
-  studio: {
-    swedish: { 60: 25000, 90: 35000, 120: 50000 },
-    "deep-tissue": { 60: 30000, 90: 40000, 120: 50000 },
-    "full-body": { 60: 30000, 90: 40000, 120: 50000 },
-    sports: { 60: 50000, 90: 70000 },
-  },
-  mobile: {
-    swedish: { 60: 35000, 90: 50000, 120: 65000 },
-    "deep-tissue": { 60: 40000, 90: 55000, 120: 70000 },
-    "full-body": { 60: 40000, 90: 55000, 120: 70000 },
-    sports: { 60: 70000, 90: 95000 },
-  },
+export const LOCATION_LABEL = {
+  studio: "Our Home Studio",
+  mobile: "Your Home or Hotel",
 };
 
 export const SERVICES = [
   {
     id: "swedish",
     name: "Swedish Massage",
-    icon: "🌿",
-    desc: "Gentle, flowing strokes for circulation and calm.",
-    benefit: "Deep relaxation, stress management and unwinding.",
-    longDesc:
-      "Our most popular massage. Uses long, gliding strokes with light to medium pressure to help you completely unwind. Perfect for melting away daily stress and improving blood flow.",
-    bestFor: "Stress relief & gentle relaxation",
-    badge: "Popular",
-    bc: "bg-emerald-100 text-emerald-700",
-    image: "/assets/swedish_massage.jpg",
+    icon: "🌸",
+    badge: "Classic",
+    bc: "bg-teal-50 text-teal-700",
+    benefit: "Gentle, flowing strokes to ease tension and promote total relaxation.",
   },
   {
-    id: "deep-tissue",
-    name: "Deep Tissue Massage",
+    id: "deep_tissue",
+    name: "Deep Tissue",
     icon: "💪",
-    desc: "Targeted pressure to release chronic tension.",
-    benefit: "Recovery, relief from body pain, muscle tension and aches.",
-    longDesc:
-      "Targets the deeper layers of muscle and fascia. Uses slow, firm strokes and trigger point therapy to break down adhesions and relieve chronic aches, perfect for active lifestyles.",
-    bestFor: "Muscle tension & pain recovery",
     badge: "Therapeutic",
-    bc: "bg-amber-100 text-amber-700",
-    image: "/assets/deep_tissue.jpg",
+    bc: "bg-orange-50 text-orange-700",
+    benefit: "Firm pressure targeting deep muscle layers and chronic knots.",
   },
   {
-    id: "full-body",
-    name: "Full Body Massage",
-    icon: "✨",
-    desc: "Head-to-toe treatment combining multiple techniques.",
-    benefit:
-      "Tailored massage — a custom combination of Swedish and Deep Tissue techniques.",
-    longDesc:
-      "The ultimate spa experience. A head-to-toe treatment where your therapist blends techniques (Swedish, Deep Tissue, and stretching) based on exactly what your body needs that day.",
-    bestFor: "Complete body rejuvenation",
-    badge: "Signature",
-    bc: "bg-violet-100 text-violet-700",
-    image: "/assets/full_body.jpg",
+    id: "hot_stone",
+    name: "Hot Stone",
+    icon: "🔥",
+    badge: "Luxury",
+    bc: "bg-red-50 text-red-700",
+    benefit: "Smooth heated stones melt away stress and deeply relax muscles.",
+  },
+  {
+    id: "feet",
+    name: "Reflexology (Feet)",
+    icon: "🦶",
+    badge: "Grounding",
+    bc: "bg-amber-50 text-amber-700",
+    benefit: "Targeted pressure points on the feet to restore balance and energy.",
+  },
+  {
+    id: "scalp",
+    name: "Scalp Therapy",
+    icon: "🧠",
+    badge: "Soothing",
+    bc: "bg-indigo-50 text-indigo-700",
+    benefit: "Relieves headaches and promotes deep mental relaxation.",
+  },
+  {
+    id: "aromatherapy",
+    name: "Aromatherapy",
+    icon: "🌿",
+    badge: "Sensory",
+    bc: "bg-emerald-50 text-emerald-700",
+    benefit: "Essential oils tailored to your mood, enhancing physical and emotional well-being.",
   },
 ];
 
 export const ADDONS = [
-  {
-    id: "scalp",
-    name: "Scalp Massage",
-    icon: "💆",
-    price: 4000,
-    minutes: 15,
-    desc: "Pressure-point scalp and temple work",
-  },
-  {
-    id: "reflexology",
-    name: "Foot Reflexology",
-    icon: "👣",
-    price: 5000,
-    minutes: 20,
-    desc: "Zone-based foot therapy",
-  },
+  { id: "hot_towels", name: "Hot Towels", icon: "♨️", price: 2000, minutes: 5, desc: "Warm towels to open pores and relax muscles." },
+  { id: "scalp_scrub", name: "Scalp Scrub", icon: "✨", price: 3500, minutes: 10, desc: "Exfoliating scalp treatment for ultimate refreshment." },
+  { id: "foot_scrub", name: "Foot Scrub", icon: "🦶", price: 3000, minutes: 10, desc: "Revitalizing scrub to soften and smooth tired feet." },
 ];
 
 export const THERAPISTS = [
-  {
-    id: "any",
-    name: "No Preference",
-    role: "Next available",
-    gender: "any",
-    rating: 5.0,
-    specialties: ["All services"],
-  },
-  {
-    id: "female",
-    name: "Female Therapist",
-    role: "Certified & vetted",
-    gender: "female",
-    rating: 4.9,
-    specialties: ["Swedish", "Deep Tissue", "Full Body"],
-  },
-  {
-    id: "male",
-    name: "Male Therapist",
-    role: "Certified & vetted",
-    gender: "male",
-    rating: 4.9,
-    specialties: ["Swedish", "Deep Tissue", "Full Body", "Sports"],
-  },
-];
-
-export const SPORTS_THERAPISTS = [
-  {
-    id: "male-specialist",
-    name: "Male Specialist",
-    gender: "male",
-    role: "Certified Sports & Recovery Therapist",
-    available: true,
-  },
-];
-
-export const STUDIO_SLOTS = [
-  "9:00 AM",
-  "10:00 AM",
-  "11:00 AM",
-  "12:00 PM",
-  "1:00 PM",
-  "2:00 PM",
-  "3:00 PM",
-  "4:00 PM",
-  "5:00 PM",
-  "6:00 PM",
-];
-
-export const MOBILE_SLOTS = [
-  "7:00 AM",
-  "8:00 AM",
-  "9:00 AM",
-  "10:00 AM",
-  "11:00 AM",
-  "12:00 PM",
-  "1:00 PM",
-  "2:00 PM",
-  "3:00 PM",
-  "4:00 PM",
-  "5:00 PM",
-  "6:00 PM",
-  "7:00 PM",
-  "8:00 PM",
-  "9:00 PM",
-  "10:00 PM",
-  "11:00 PM",
-  "12:00 AM",
+  { id: "any", name: "Any Available", role: "We will assign the best specialist for you." },
+  { id: "female", name: "Female Specialist", role: "Expert in relaxation and deep tissue therapy." },
+  { id: "male", name: "Male Specialist", role: "Expert in sports and deep tissue recovery." },
 ];
 
 export const MEMBERSHIP_PLAN = {
-  id: "monthly-essential",
-  name: "Monthly Essential",
-  tagline: "One massage a month. Every month.",
-  sessions: 1,
-  icon: "🌿",
-  discountRate: 0.1,
+  name: "Vivify Wellness Club",
+  tagline: "Consistent self-care, exclusive pricing.",
+  icon: "👑",
+  sessions: "Monthly",
   benefits: [
-    { icon: "💆", text: "1 massage of your choice, every month" },
-    { icon: "💸", text: "10% off every session — applied automatically" },
-    { icon: "⚡", text: "Priority booking — front of the queue" },
-    { icon: "🧑‍⚕️", text: "Same trusted therapist whenever available" },
-    { icon: "⏸️", text: "Pause or cancel anytime — no lock-in" },
+    { icon: "✨", text: "Priority booking for your preferred times." },
+    { icon: "💆", text: "Dedicated specialist who knows your body." },
+    { icon: "💎", text: "Complimentary aromatherapy upgrade." },
   ],
 };
 
-export const SPORTS_TECHNIQUES = [
-  {
-    id: "met",
-    name: "MET Stretching",
-    fullName: "Muscle Energy Technique",
-    blurb:
-      "Gentle muscle contractions to relax, lengthen and rebalance your body.",
-    icon: "🔄",
-  },
-  {
-    id: "pnf",
-    name: "PNF Stretching",
-    fullName: "Proprioceptive Neuromuscular Facilitation",
-    blurb:
-      "Contract-relax method for improving flexibility and peak performance.",
-    icon: "⚡",
-  },
-];
-
-export const SPORTS_DURATIONS = [60, 90];
-
-export const SPORTS_FOCUS = [
-  "Neck & Shoulders",
-  "Lower Back",
-  "Hamstrings",
-  "Calves",
-  "IT Band",
-  "Glutes",
-  "Quads",
-  "Full Body",
-];
-
-export const fmt = (n) => `₦${Number(n).toLocaleString()}`;
-export const disc10 = (n) => Math.round(n * 0.9);
-export const getPrice = (type, svc, dur) => PRICING[type]?.[svc]?.[dur] || 0;
-export const durList = (svc) =>
-  svc ? Object.keys(PRICING.studio[svc] || {}).map(Number) : [60, 90, 120];
-export const todayStr = () => new Date().toISOString().split("T")[0];
-export const maxStr = () => {
-  const d = new Date();
-  d.setMonth(d.getMonth() + 3);
-  return d.toISOString().split("T")[0];
+// PRICING LOGIC
+// Map of service IDs to their base price (e.g., for 60 mins)
+const BASE_PRICES = {
+  swedish: 15000,
+  deep_tissue: 20000,
+  hot_stone: 25000,
+  feet: 6000,
+  scalp: 10000,
+  aromatherapy: 18000,
 };
 
-export const LOCATION_LABEL = {
-  studio: "Our Home Studio",
-  mobile: "Your Home or Hotel",
-};
+export const getPrice = (svcType, serviceId, duration) => {
+  if (!serviceId || !duration) return 0;
+  let base = BASE_PRICES[serviceId] || 15000;
 
-export const getSportsTherapistInfo = () => {
-  const available = SPORTS_THERAPISTS.filter((t) => t.available);
-  const hasMale = available.some((t) => t.gender === "male");
-  const hasFemale = available.some((t) => t.gender === "female");
+  // Adjust price based on duration (e.g., 90 mins is 1.5x, 120 mins is 2x)
+  const multiplier = Number(duration) / 60;
+  let price = base * multiplier;
 
-  let headline = "";
-  let detail = "";
-
-  if (hasMale && hasFemale) {
-    headline = "Male & Female Specialists Available";
-    detail =
-      "Both specialists are certified in Sports Massage. Your therapist will be confirmed when we reach out on WhatsApp.";
-  } else if (hasMale) {
-    headline = "Performed by our Male Specialist";
-    detail =
-      "Sports Massage is currently delivered by our certified male specialist. You'll meet him at your session.";
-  } else if (hasFemale) {
-    headline = "Performed by our Female Specialist";
-    detail =
-      "Sports Massage is currently delivered by our certified female specialist. You'll meet her at your session.";
-  } else {
-    headline = "Therapist Assignment Confirmed on Booking";
-    detail =
-      "We'll assign a certified specialist and confirm their details when we reach out on WhatsApp.";
+  // Mobile service adds a slight surcharge (e.g., 15%) for transport
+  if (svcType === "mobile") {
+    price = price * 1.15;
   }
 
-  return {
-    available,
-    hasMale,
-    hasFemale,
-    headline,
-    detail,
-    list: available.map((t) => ({
-      name: t.name,
-      role: t.role,
-      gender: t.gender,
-    })),
-  };
+  return Math.round(price);
 };
+
+export const durList = (serviceId) => {
+  // Feet and scalp might only have 60 mins, others have 60, 90, 120
+  if (serviceId === "feet" || serviceId === "scalp") return [60, 90];
+  return [60, 90, 120];
+};
+
+export const fmt = (n) => `₦${Number(n).toLocaleString()}`;
