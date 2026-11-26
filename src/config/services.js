@@ -28,7 +28,7 @@ export const SERVICES = [
       "Our most popular massage. Uses long, gliding strokes with light to medium pressure to help you completely unwind. Perfect for melting away daily stress and improving blood flow.",
     bestFor: "Stress relief & gentle relaxation",
     badge: "Popular",
-    bc: "bg-emerald-50 text-emerald-700", // Updated to match new theme
+    bc: "bg-emerald-50 text-emerald-700",
     image: "/assets/swedish_massage.jpg",
   },
   {
@@ -65,7 +65,7 @@ export const ADDONS = [
     id: "scalp",
     name: "Scalp Massage",
     icon: "💆",
-    price: 4000,
+    price: 10000, // Updated to 10k
     minutes: 15,
     desc: "Pressure-point scalp and temple work",
   },
@@ -73,8 +73,8 @@ export const ADDONS = [
     id: "reflexology",
     name: "Foot Reflexology",
     icon: "👣",
-    price: 5000,
-    minutes: 20,
+    price: 7000, // Updated to 7k
+    minutes: 10,
     desc: "Zone-based foot therapy",
   },
 ];
