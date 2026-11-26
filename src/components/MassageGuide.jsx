@@ -1,79 +1,74 @@
-import { Sparkles, ArrowRight } from "lucide-react";
-import { SERVICES } from "../config/services";
+import React from "react";
+import { SERVICES, fmt, getPrice } from "../config/services";
+import { ArrowRight, Sparkles } from "lucide-react";
 
 export default function MassageGuide({ onSelectService }) {
   return (
-    <div className="max-w-4xl mx-auto mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-4 text-xs font-bold tracking-wider uppercase bg-white/10 text-white border border-white/20">
-          <Sparkles className="w-3.5 h-3.5" /> Find Your Perfect Massage
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24 animate-luxe">
+      {/* Editorial Header */}
+      <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E8EDE6] text-[#4A5D4E] text-xs font-bold tracking-widest uppercase mb-6">
+          <Sparkles className="w-3 h-3" /> The Vivify Collection
         </div>
-        <h2
-          className="text-2xl sm:text-3xl font-bold text-white mb-2"
-          style={{ fontFamily: "Cormorant Garamond" }}
-        >
-          Not sure what to book?
+        <h2 className="text-4xl sm:text-5xl font-medium text-[#2C3531] leading-tight mb-6" style={{ fontFamily: "Cormorant Garamond" }}>
+          Curated rituals for your <br className="hidden sm:block" />
+          <span className="italic text-[#C8795D]">mind, body, and soul.</span>
         </h2>
-        <p className="text-cyan-200 text-sm max-w-md mx-auto">
-          Read about our treatments below to find the one that fits your body's
-          needs.
+        <p className="text-[#5A6B5D] text-lg max-w-xl mx-auto font-light">
+          Select an experience below to begin your journey. Each session is tailored to your unique needs by our expert therapists.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {SERVICES.map((svc) => (
-          <div
-            key={svc.id}
-            className="rounded-3xl overflow-hidden flex flex-col"
-            style={{
-              background: "rgba(255,255,255,0.95)",
-              border: "1px solid rgba(255,255,255,0.2)",
-            }}
-          >
-            <div className="h-32 w-full relative">
-              <img
-                src={svc.image}
-                alt={svc.name}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-              <div className="absolute bottom-3 left-4">
-                <span className="text-2xl">{svc.icon}</span>
-                <h3
-                  className="text-lg font-bold text-white leading-tight"
-                  style={{ fontFamily: "Cormorant Garamond" }}
-                >
-                  {svc.name}
-                </h3>
+      {/* Advanced Editorial Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        {SERVICES.map((svc, index) => {
+          // Make the first card span 2 columns on large screens for an asymmetric editorial look
+          const isFeatured = index === 0;
+          return (
+            <div
+              key={svc.id}
+              onClick={() => onSelectService(svc.id)}
+              className={`group relative overflow-hidden rounded-[2rem] bg-white border border-[#E8EDE6] shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer flex flex-col
+                ${isFeatured ? "md:col-span-2 lg:col-span-2 lg:flex-row" : ""}
+              `}
+            >
+              {/* Image/Gradient Area */}
+              <div className={`p-8 flex items-center justify-center relative overflow-hidden bg-[#F4F1E9] ${isFeatured ? "lg:w-1/2 min-h-[250px]" : "min-h-[200px]"}`}>
+                <div className="absolute inset-0 bg-gradient-to-tr from-[#E8EDE6]/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <span className="text-6xl sm:text-7xl transform group-hover:scale-110 transition-transform duration-500">{svc.icon}</span>
+              </div>
+
+              {/* Content Area */}
+              <div className={`p-8 flex flex-col justify-between ${isFeatured ? "lg:w-1/2" : ""}`}>
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider ${svc.bc || "bg-[#E8EDE6] text-[#4A5D4E]"}`}>
+                      {svc.badge}
+                    </span>
+                  </div>
+                  <h3 className="text-2xl font-medium text-[#2C3531] mb-3" style={{ fontFamily: "Cormorant Garamond" }}>
+                    {svc.name}
+                  </h3>
+                  <p className="text-sm text-[#5A6B5D] leading-relaxed mb-6 font-light">
+                    {svc.benefit}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-[#F4F1E9] mt-auto">
+                  <div>
+                    <p className="text-xs text-[#A3B19B] uppercase tracking-wider mb-1">From</p>
+                    <p className="text-lg font-bold text-[#2C3531]" style={{ fontFamily: "Cormorant Garamond" }}>
+                      {fmt(getPrice("studio", svc.id, 60))}
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-[#F4F1E9] flex items-center justify-center group-hover:bg-[#4A5D4E] group-hover:text-white transition-colors duration-300">
+                    <ArrowRight className="w-4 h-4" />
+                  </div>
+                </div>
               </div>
             </div>
-
-            <div className="p-4 flex flex-col flex-1">
-              <div className="mb-3">
-                <p className="text-xs font-bold text-cyan-600 uppercase tracking-wider mb-1">
-                  Best for
-                </p>
-                <p className="text-sm font-semibold text-gray-800">
-                  {svc.bestFor}
-                </p>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed mb-4 flex-1">
-                {svc.longDesc}
-              </p>
-
-              <button
-                onClick={() => onSelectService(svc.id)}
-                className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all flex items-center justify-center gap-2 group"
-                style={{
-                  background: "linear-gradient(135deg,#0891b2,#06b6d4)",
-                }}
-              >
-                Book This Massage
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

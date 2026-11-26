@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import {
-  Home, Building2, User, Check, ArrowRight, ArrowLeft, ShieldCheck, Wallet, AlertCircle
+  Home, Building2, User, Check, ArrowRight, ArrowLeft, ShieldCheck, Wallet, AlertCircle, Sparkles
 } from "lucide-react";
 import {
   SERVICES, ADDONS, THERAPISTS, fmt, getPrice, durList, LOCATION_LABEL,
@@ -9,7 +9,7 @@ import DateStrip from "./DateStrip";
 import SlotGrid from "./SlotGrid";
 import { useAvailability } from "../hooks/useAvailability";
 
-const STEPS = ["Service", "Add-ons", "Therapist", "Date", "Confirm"];
+const STEPS = ["Ritual", "Enhancements", "Therapist", "Schedule", "Confirm"];
 const WA_NUMBER = "2347040723894";
 const PAYSTACK_KEY = "pk_live_915663b76742c16f999c99e6251596ee7c5c9584";
 
@@ -47,7 +47,7 @@ export default function BookingWizard({ initialService = "" }) {
       isFirstRender.current = false;
       return;
     }
-    setErrorMsg(""); // clear errors on step change
+    setErrorMsg("");
     if (!topRef.current) return;
     const headerOffset = window.innerWidth < 768 ? 70 : 90;
     const y = topRef.current.getBoundingClientRect().top + window.pageYOffset - headerOffset;
@@ -150,7 +150,7 @@ export default function BookingWizard({ initialService = "" }) {
 
       if (!window.PaystackPop) {
         setLoading(false);
-        return setErrorMsg("Payment system is still loading. Please try again in a moment.");
+        return setErrorMsg("Payment system is still loading. Please try again.");
       }
 
       const amount = payOpt === "full" ? total : Math.round(total * 0.5);
@@ -164,7 +164,6 @@ export default function BookingWizard({ initialService = "" }) {
         metadata: {
           custom_fields: [{ display_name: "Customer", variable_name: "customer", value: name }],
         },
-        // Standard function syntax to prevent Paystack errors
         callback: function (response) {
           finalizeBooking(response.reference, svcObj, ref).catch(console.error);
         },
@@ -236,77 +235,44 @@ export default function BookingWizard({ initialService = "" }) {
   };
 
   const ctaLabel = (() => {
-    if (svcType === "mobile") return "Confirm Booking";
+    if (svcType === "mobile") return "Confirm Appointment";
     if (payOpt === "full") return `Pay ${fmt(total)}`;
     return `Pay 50% — ${fmt(Math.round(total * 0.5))}`;
   })();
 
   return (
-    <div ref={topRef} className="max-w-2xl mx-auto pb-32 md:pb-8">
-      {/* Progress Bar */}
-      <div className="mb-6 px-2">
-        <div className="flex items-center gap-2 mb-3">
-          {STEPS.map((label, i) => (
-            <div key={i} className="flex-1 flex items-center gap-2">
-              <div
-                className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300"
-                style={{
-                  background: step > i ? "#10b981" : step === i ? "linear-gradient(135deg,#0d9488,#14b8a6)" : "rgba(255,255,255,0.15)",
-                  color: step >= i ? "white" : "rgba(255,255,255,0.5)",
-                  boxShadow: step === i ? "0 4px 12px rgba(20,184,166,0.4)" : "none",
-                }}
-              >
-                {step > i ? <Check className="w-4 h-4" /> : i + 1}
-              </div>
-              {i < STEPS.length - 1 && (
-                <div className="flex-1 h-1 rounded-full transition-all duration-300" style={{ background: step > i ? "#10b981" : "rgba(255,255,255,0.15)" }} />
-              )}
-            </div>
+    <div ref={topRef} className="max-w-3xl mx-auto pb-32 md:pb-12 px-2 sm:px-0">
+      {/* Elegant Step Progress */}
+      <div className="mb-10 text-center">
+        <p className="text-[10px] font-bold text-[#A3B19B] uppercase tracking-[0.2em] mb-4">
+          Step {step + 1} — {STEPS[step]}
+        </p>
+        <div className="flex items-center justify-center gap-2">
+          {STEPS.map((_, i) => (
+            <div key={i} className={`h-1 rounded-full transition-all duration-500 ${step >= i ? "w-8 bg-[#4A5D4E]" : "w-4 bg-[#E8EDE6]"}`} />
           ))}
         </div>
-        <p className="text-xs text-center font-medium text-teal-100 uppercase tracking-widest">
-          Step {step + 1} of 5 · {STEPS[step]}
-        </p>
       </div>
 
-      {/* Main Card */}
-      <div className="bg-white rounded-[2rem] overflow-hidden shadow-2xl shadow-teal-900/20 border border-white/20">
+      {/* Main Booking Card */}
+      <div className="bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-[#4A5D4E]/10 border border-[#F4F1E9]">
 
-        {/* Card Header */}
-        <div className="px-6 py-6 border-b border-gray-100 bg-gray-50/50">
-          <h2 className="font-bold text-gray-900 leading-tight" style={{ fontFamily: "Cormorant Garamond", fontSize: "1.6rem" }}>
-            {step === 0 && "Choose your massage"}
-            {step === 1 && "Add something special?"}
-            {step === 2 && "Pick your therapist"}
-            {step === 3 && "When works best?"}
-            {step === 4 && "Almost done"}
-          </h2>
-          <p className="text-xs text-gray-500 mt-1 font-medium">
-            {step === 0 && "Pick location, massage and duration"}
-            {step === 1 && "Optional — skip if you prefer"}
-            {step === 2 && "Male, female, or let us choose"}
-            {step === 3 && "Live slots — booked times are hidden"}
-            {step === 4 && "Enter your details and confirm"}
-          </p>
-        </div>
-
-        {/* Body (Animated) */}
-        <div className="p-5 sm:p-7 min-h-[400px]">
+        <div className="p-6 sm:p-12">
 
           {errorMsg && (
-            <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700 font-medium">{errorMsg}</p>
+            <div className="mb-8 p-4 bg-[#FDF4F2] border border-[#E8C5BC] rounded-2xl flex items-start gap-3 animate-luxe">
+              <AlertCircle className="w-5 h-5 text-[#C8795D] flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-[#9B5C4A] font-medium">{errorMsg}</p>
             </div>
           )}
 
-          <div key={step} className="animate-step">
+          <div key={step} className="animate-luxe">
             {/* STEP 0: Service */}
             {step === 0 && (
-              <div className="space-y-8">
+              <div className="space-y-10">
                 <div>
-                  <Label>Location</Label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <Label>Select Environment</Label>
+                  <div className="grid grid-cols-2 gap-4">
                     {[
                       { id: "studio", label: LOCATION_LABEL.studio, sub: "Pay online", Icon: Building2 },
                       { id: "mobile", label: LOCATION_LABEL.mobile, sub: "Pay after session", Icon: Home },
@@ -314,25 +280,25 @@ export default function BookingWizard({ initialService = "" }) {
                       <button
                         key={o.id}
                         onClick={() => setSvcType(o.id)}
-                        className="p-4 rounded-2xl border-2 transition-all text-left group"
+                        className="p-5 rounded-2xl border-2 transition-all text-left group"
                         style={{
-                          borderColor: svcType === o.id ? "#14b8a6" : "#e5e7eb",
-                          background: svcType === o.id ? "#f0fdfa" : "white",
+                          borderColor: svcType === o.id ? "#4A5D4E" : "#F4F1E9",
+                          background: svcType === o.id ? "#F9F6F0" : "white",
                         }}
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <o.Icon className={`w-5 h-5 transition-colors ${svcType === o.id ? "text-teal-600" : "text-gray-400 group-hover:text-teal-500"}`} />
+                        <div className="flex items-center justify-between mb-3">
+                          <o.Icon className={`w-5 h-5 ${svcType === o.id ? "text-[#4A5D4E]" : "text-[#A3B19B]"}`} />
                           {svcType === o.id && <CheckMark />}
                         </div>
-                        <p className="font-bold text-gray-900 text-sm">{o.label}</p>
-                        <p className={`text-xs mt-0.5 font-semibold ${svcType === o.id ? "text-teal-600" : "text-gray-500"}`}>{o.sub}</p>
+                        <p className="font-bold text-[#2C3531] text-sm">{o.label}</p>
+                        <p className={`text-xs mt-1 font-medium ${svcType === o.id ? "text-[#4A5D4E]" : "text-[#A3B19B]"}`}>{o.sub}</p>
                       </button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <Label>Massage</Label>
+                  <Label>Choose Your Ritual</Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {SERVICES.map((svc) => {
                       const sel = service === svc.id;
@@ -340,24 +306,21 @@ export default function BookingWizard({ initialService = "" }) {
                         <button
                           key={svc.id}
                           onClick={() => setService(svc.id)}
-                          className="p-4 rounded-2xl border-2 text-left transition-all duration-200 flex flex-col gap-2 relative overflow-hidden group"
+                          className="p-5 rounded-2xl border-2 text-left transition-all duration-300 flex flex-col gap-3 group"
                           style={{
-                            borderColor: sel ? "#14b8a6" : "#e5e7eb",
-                            background: sel ? "#f0fdfa" : "white",
+                            borderColor: sel ? "#4A5D4E" : "#F4F1E9",
+                            background: sel ? "#F9F6F0" : "white",
                           }}
                         >
                           <div className="flex justify-between items-start">
-                            <span className="text-3xl bg-white w-12 h-12 rounded-xl flex items-center justify-center shadow-sm border border-gray-100 group-hover:scale-110 transition-transform">{svc.icon}</span>
+                            <span className="text-3xl bg-[#F9F6F0] w-14 h-14 rounded-2xl flex items-center justify-center border border-[#E8EDE6]">{svc.icon}</span>
                             {sel && <CheckMark />}
                           </div>
                           <div>
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <span className="font-bold text-gray-900 text-sm">{svc.name}</span>
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${svc.bc}`}>{svc.badge}</span>
-                            </div>
-                            <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{svc.benefit}</p>
+                            <p className="font-bold text-[#2C3531] text-base mb-1" style={{ fontFamily: "Cormorant Garamond" }}>{svc.name}</p>
+                            <p className="text-xs text-[#5A6B5D] line-clamp-2 leading-relaxed">{svc.benefit}</p>
                           </div>
-                          <p className="text-sm mt-1 font-bold text-teal-600">From {fmt(getPrice(svcType, svc.id, 60))}</p>
+                          <p className="text-sm font-bold text-[#4A5D4E] mt-2">From {fmt(getPrice(svcType, svc.id, 60))}</p>
                         </button>
                       );
                     })}
@@ -365,8 +328,8 @@ export default function BookingWizard({ initialService = "" }) {
                 </div>
 
                 {service && (
-                  <div className="animate-in fade-in slide-in-from-top-4">
-                    <Label>Duration</Label>
+                  <div className="animate-luxe">
+                    <Label>Session Length</Label>
                     <div className="grid grid-cols-3 gap-3">
                       {durList(service).map((m) => {
                         const p = getPrice(svcType, service, m);
@@ -377,13 +340,13 @@ export default function BookingWizard({ initialService = "" }) {
                             onClick={() => setDuration(m)}
                             className="p-4 rounded-2xl border-2 text-center transition-all duration-200"
                             style={{
-                              borderColor: sel ? "#14b8a6" : "#e5e7eb",
-                              background: sel ? "#f0fdfa" : "white",
+                              borderColor: sel ? "#4A5D4E" : "#F4F1E9",
+                              background: sel ? "#F9F6F0" : "white",
                             }}
                           >
-                            <p className={`text-2xl font-bold ${sel ? "text-teal-700" : "text-gray-900"}`} style={{ fontFamily: "Cormorant Garamond" }}>{m}</p>
-                            <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${sel ? "text-teal-600" : "text-gray-400"}`}>MIN</p>
-                            <p className={`text-sm font-bold ${sel ? "text-teal-700" : "text-gray-600"}`}>{fmt(p)}</p>
+                            <p className={`text-2xl font-bold ${sel ? "text-[#2C3531]" : "text-[#A3B19B]"}`} style={{ fontFamily: "Cormorant Garamond" }}>{m}</p>
+                            <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${sel ? "text-[#4A5D4E]" : "text-[#A3B19B]"}`}>MIN</p>
+                            <p className={`text-sm font-bold ${sel ? "text-[#4A5D4E]" : "text-[#5A6B5D]"}`}>{fmt(p)}</p>
                           </button>
                         );
                       })}
@@ -395,79 +358,80 @@ export default function BookingWizard({ initialService = "" }) {
 
             {/* STEP 1: Add-ons */}
             {step === 1 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {ADDONS.map((a) => {
-                  const on = addons.includes(a.id);
-                  return (
-                    <button
-                      key={a.id}
-                      onClick={() => setAddons(on ? addons.filter((x) => x !== a.id) : [...addons, a.id])}
-                      className="p-4 rounded-2xl border-2 flex flex-col gap-2 text-left transition-all duration-200 relative group"
-                      style={{ borderColor: on ? "#14b8a6" : "#e5e7eb", background: on ? "#f0fdfa" : "white" }}
-                    >
-                      <div className="flex justify-between items-start">
-                        <span className="text-3xl">{a.icon}</span>
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${on ? "bg-teal-500 border-teal-500" : "border-gray-300"}`}>
-                          {on && <Check className="w-3.5 h-3.5 text-white" />}
+              <div>
+                <Label>Enhance Your Experience</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {ADDONS.map((a) => {
+                    const on = addons.includes(a.id);
+                    return (
+                      <button
+                        key={a.id}
+                        onClick={() => setAddons(on ? addons.filter((x) => x !== a.id) : [...addons, a.id])}
+                        className="p-5 rounded-2xl border-2 flex flex-col gap-3 text-left transition-all duration-200"
+                        style={{ borderColor: on ? "#4A5D4E" : "#F4F1E9", background: on ? "#F9F6F0" : "white" }}
+                      >
+                        <div className="flex justify-between items-start">
+                          <span className="text-3xl">{a.icon}</span>
+                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${on ? "bg-[#4A5D4E] border-[#4A5D4E]" : "border-[#E8EDE6]"}`}>
+                            {on && <Check className="w-3.5 h-3.5 text-white" />}
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900 text-sm">{a.name}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{a.desc}</p>
-                      </div>
-                      <p className={`text-sm font-bold mt-1 ${on ? "text-teal-700" : "text-gray-600"}`}>+{fmt(a.price)}</p>
-                    </button>
-                  );
-                })}
+                        <div>
+                          <p className="font-bold text-[#2C3531] text-sm">{a.name}</p>
+                          <p className="text-xs text-[#5A6B5D] mt-1">{a.desc}</p>
+                        </div>
+                        <p className={`text-sm font-bold mt-1 ${on ? "text-[#4A5D4E]" : "text-[#A3B19B]"}`}>+{fmt(a.price)}</p>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
             {/* STEP 2: Therapist */}
             {step === 2 && (
-              <div className="space-y-3">
-                {THERAPISTS.map((t) => {
-                  const sel = therapist === t.id;
-                  return (
-                    <button
-                      key={t.id}
-                      onClick={() => setTherapist(t.id)}
-                      className="w-full p-4 rounded-2xl border-2 flex items-center gap-4 text-left transition-all duration-200"
-                      style={{ borderColor: sel ? "#14b8a6" : "#e5e7eb", background: sel ? "#f0fdfa" : "white" }}
-                    >
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${sel ? "bg-teal-500" : "bg-gray-100"}`}>
-                        <User className={`w-6 h-6 ${sel ? "text-white" : "text-gray-400"}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-gray-900 text-sm">{t.name}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{t.role}</p>
-                      </div>
-                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${sel ? "bg-teal-500 border-teal-500" : "border-gray-300"}`}>
-                        {sel && <Check className="w-3.5 h-3.5 text-white" />}
-                      </div>
-                    </button>
-                  );
-                })}
+              <div>
+                <Label>Select Your Specialist</Label>
+                <div className="space-y-3">
+                  {THERAPISTS.map((t) => {
+                    const sel = therapist === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => setTherapist(t.id)}
+                        className="w-full p-5 rounded-2xl border-2 flex items-center gap-5 text-left transition-all duration-200"
+                        style={{ borderColor: sel ? "#4A5D4E" : "#F4F1E9", background: sel ? "#F9F6F0" : "white" }}
+                      >
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${sel ? "bg-[#4A5D4E]" : "bg-[#F4F1E9]"}`}>
+                          <User className={`w-5 h-5 ${sel ? "text-white" : "text-[#A3B19B]"}`} />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-bold text-[#2C3531] text-sm">{t.name}</p>
+                          <p className="text-xs text-[#5A6B5D] mt-1">{t.role}</p>
+                        </div>
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${sel ? "bg-[#4A5D4E] border-[#4A5D4E]" : "border-[#E8EDE6]"}`}>
+                          {sel && <Check className="w-3.5 h-3.5 text-white" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
             {/* STEP 3: Date & Time */}
             {step === 3 && (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div>
                   <Label>Select Date</Label>
                   <DateStrip value={date} onChange={setDate} />
                 </div>
                 {date && (
-                  <div className="animate-in fade-in slide-in-from-top-4">
+                  <div className="animate-luxe">
                     <Label>
                       Select Time
-                      <span className="text-teal-600 font-bold ml-1 bg-teal-50 px-2 py-0.5 rounded-md">· {totalDuration} min session</span>
+                      <span className="text-[#4A5D4E] font-bold ml-2 text-[10px] bg-[#E8EDE6] px-2 py-1 rounded-md uppercase tracking-wider">· {totalDuration} min</span>
                     </Label>
-                    {svcType === "mobile" && (
-                      <p className="text-xs text-gray-500 mb-3 flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-teal-500"></span> Mobile service runs 7 AM – 12 AM, 7 days a week
-                      </p>
-                    )}
                     <SlotGrid available={available} loading={slotsLoading} selected={time} onSelect={setTime} serviceType={svcType} />
                   </div>
                 )}
@@ -476,7 +440,7 @@ export default function BookingWizard({ initialService = "" }) {
 
             {/* STEP 4: Confirm */}
             {step === 4 && (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div>
                   <Label>Your Details</Label>
                   <div className="space-y-4">
@@ -489,14 +453,14 @@ export default function BookingWizard({ initialService = "" }) {
                         setPhoneErr(d.length > 0 && d.length < 11 ? "Must be 11 digits" : "");
                       }}
                     />
-                    <Field label="Email" type="email" value={email} onChange={setEmail} placeholder="you@email.com" />
+                    <Field label="Email Address" type="email" value={email} onChange={setEmail} placeholder="you@email.com" />
                   </div>
                 </div>
 
                 {svcType === "studio" && (
                   <div>
-                    <Label>Payment Option</Label>
-                    <div className="grid grid-cols-1 gap-3">
+                    <Label>Payment Preference</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
                         { id: "full", l: "Pay in full", s: "Complete payment now", a: total },
                         { id: "deposit", l: "50% Deposit", s: "Balance at the studio", a: Math.round(total * 0.5) },
@@ -504,43 +468,43 @@ export default function BookingWizard({ initialService = "" }) {
                         <button
                           key={o.id}
                           onClick={() => setPayOpt(o.id)}
-                          className="p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between gap-3"
-                          style={{ borderColor: payOpt === o.id ? "#14b8a6" : "#e5e7eb", background: payOpt === o.id ? "#f0fdfa" : "white" }}
+                          className="p-5 rounded-2xl border-2 text-left transition-all flex flex-col justify-between gap-2"
+                          style={{ borderColor: payOpt === o.id ? "#4A5D4E" : "#F4F1E9", background: payOpt === o.id ? "#F9F6F0" : "white" }}
                         >
                           <div>
-                            <p className="font-bold text-gray-900 text-sm">{o.l}</p>
-                            <p className="text-xs text-gray-500 mt-0.5">{o.s}</p>
+                            <p className="font-bold text-[#2C3531] text-sm">{o.l}</p>
+                            <p className="text-xs text-[#5A6B5D] mt-1">{o.s}</p>
                           </div>
-                          <p className={`text-lg font-bold ${payOpt === o.id ? "text-teal-600" : "text-gray-700"}`}>{fmt(o.a)}</p>
+                          <p className={`text-lg font-bold ${payOpt === o.id ? "text-[#4A5D4E]" : "text-[#A3B19B]"}`} style={{ fontFamily: "Cormorant Garamond" }}>{fmt(o.a)}</p>
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
 
-                <div className="rounded-2xl p-5 bg-gray-50 border border-gray-200">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-teal-600 mb-3">Booking Summary</p>
-                  <SummaryRow icon="💆" label="Massage" value={SERVICES.find((s) => s.id === service)?.name} />
+                <div className="rounded-3xl p-6 bg-[#F9F6F0] border border-[#E8EDE6]">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#4A5D4E] mb-4">Booking Summary</p>
+                  <SummaryRow icon="💆" label="Ritual" value={SERVICES.find((s) => s.id === service)?.name} />
                   <SummaryRow icon={svcType === "studio" ? "🏢" : "🏠"} label="Location" value={svcType === "studio" ? LOCATION_LABEL.studio : LOCATION_LABEL.mobile} />
                   <SummaryRow icon="⏱" label="Duration" value={`${totalDuration} min`} />
-                  <SummaryRow icon="👤" label="Therapist" value={therapist === "male" ? "Male" : therapist === "female" ? "Female" : "Any"} />
-                  {addons.length > 0 && <SummaryRow icon="✨" label="Add-ons" value={addons.map((id) => ADDONS.find((x) => x.id === id)?.name).join(", ")} />}
-                  <SummaryRow icon="📅" label="Date" value={`${date} · ${time}`} />
+                  <SummaryRow icon="👤" label="Specialist" value={therapist === "male" ? "Male" : therapist === "female" ? "Female" : "Any"} />
+                  {addons.length > 0 && <SummaryRow icon="✨" label="Enhancements" value={addons.map((id) => ADDONS.find((x) => x.id === id)?.name).join(", ")} />}
+                  <SummaryRow icon="📅" label="Schedule" value={`${date} · ${time}`} />
 
-                  <div className="flex justify-between items-center pt-4 mt-3 border-t border-gray-200">
-                    <span className="text-sm font-bold text-gray-700 uppercase tracking-wider">Total</span>
-                    <span className="text-3xl font-bold text-teal-600" style={{ fontFamily: "Cormorant Garamond" }}>{fmt(total)}</span>
+                  <div className="flex justify-between items-center pt-5 mt-4 border-t border-[#E8EDE6]">
+                    <span className="text-sm font-bold text-[#2C3531] uppercase tracking-widest">Total</span>
+                    <span className="text-3xl font-bold text-[#4A5D4E]" style={{ fontFamily: "Cormorant Garamond" }}>{fmt(total)}</span>
                   </div>
                 </div>
 
                 {svcType === "mobile" && (
                   <InfoBar icon={<Wallet className="w-4 h-4" />}>
-                    <b className="text-gray-900">Pay after session</b> — cash or transfer to your therapist when done.
+                    <b className="text-[#2C3531]">Pay after session</b> — cash or transfer to your therapist when done.
                   </InfoBar>
                 )}
                 {svcType === "studio" && (
                   <InfoBar icon={<ShieldCheck className="w-4 h-4" />}>
-                    <b className="text-gray-900">Secure payment</b> — encrypted via Paystack. 256-bit SSL.
+                    <b className="text-[#2C3531]">Secure payment</b> — encrypted via Paystack. 256-bit SSL.
                   </InfoBar>
                 )}
               </div>
@@ -548,15 +512,15 @@ export default function BookingWizard({ initialService = "" }) {
           </div>
         </div>
 
-        {/* Sticky Footer (Mobile) / Bottom Nav (Desktop) */}
-        <div className="p-4 sm:p-6 border-t border-gray-100 bg-white rounded-b-[2rem]">
+        {/* Footer Buttons */}
+        <div className="p-6 sm:p-8 bg-[#F9F6F0] border-t border-[#E8EDE6]">
           <div className="flex gap-3">
             {step > 0 && (
               <button
                 onClick={back}
-                className="px-5 py-4 rounded-2xl font-bold text-sm border-2 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-all flex-shrink-0"
+                className="px-6 py-4 rounded-2xl font-bold text-sm border-2 border-[#E8EDE6] bg-white text-[#5A6B5D] hover:bg-[#F4F1E9] transition-all flex-shrink-0"
               >
-                <ArrowLeft className="w-4 h-4 inline mr-1" /> Back
+                Back
               </button>
             )}
             {step < 4 ? (
@@ -564,7 +528,7 @@ export default function BookingWizard({ initialService = "" }) {
                 {step === 1 && (
                   <button
                     onClick={next}
-                    className="px-5 py-4 rounded-2xl font-bold text-sm border-2 border-gray-200 bg-white text-gray-500 hover:bg-gray-50 transition-all flex-shrink-0"
+                    className="px-6 py-4 rounded-2xl font-bold text-sm border-2 border-[#E8EDE6] bg-white text-[#5A6B5D] hover:bg-[#F4F1E9] transition-all flex-shrink-0"
                   >
                     Skip
                   </button>
@@ -574,7 +538,8 @@ export default function BookingWizard({ initialService = "" }) {
                   disabled={!stepValid[step]}
                   className="flex-1 py-4 rounded-2xl font-bold text-sm text-white transition-all duration-200 flex items-center justify-center gap-2 shadow-lg disabled:shadow-none"
                   style={{
-                    background: stepValid[step] ? "linear-gradient(135deg,#0d9488,#14b8a6)" : "#d1d5db",
+                    background: stepValid[step] ? "#4A5D4E" : "#E8EDE6",
+                    color: stepValid[step] ? "white" : "#A3B19B",
                     cursor: stepValid[step] ? "pointer" : "not-allowed",
                   }}
                 >
@@ -587,9 +552,8 @@ export default function BookingWizard({ initialService = "" }) {
                 disabled={!customerValid}
                 className="flex-1 py-4 rounded-2xl font-bold text-sm text-white transition-all duration-200 shadow-lg disabled:shadow-none"
                 style={{
-                  background: customerValid
-                    ? svcType === "mobile" ? "linear-gradient(135deg,#059669,#10b981)" : "linear-gradient(135deg,#0d9488,#14b8a6)"
-                    : "#d1d5db",
+                  background: customerValid ? "#4A5D4E" : "#E8EDE6",
+                  color: customerValid ? "white" : "#A3B19B",
                   cursor: customerValid ? "pointer" : "not-allowed",
                 }}
               >
@@ -602,13 +566,13 @@ export default function BookingWizard({ initialService = "" }) {
 
       {/* Loading Overlay */}
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-3xl p-8 text-center shadow-2xl mx-4 flex flex-col items-center max-w-sm w-full">
-            <div className="w-16 h-16 rounded-full mb-5 animate-spin border-4 border-teal-100 border-t-teal-500" />
-            <h3 className="font-bold text-gray-900 text-xl mb-1" style={{ fontFamily: "Cormorant Garamond" }}>
-              {svcType === "mobile" ? "Booking your appointment…" : "Opening secure payment…"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#2C3531]/80 backdrop-blur-md animate-luxe">
+          <div className="bg-[#F9F6F0] rounded-3xl p-10 text-center shadow-2xl mx-4 flex flex-col items-center max-w-sm w-full border border-[#E8EDE6]">
+            <div className="w-16 h-16 rounded-full mb-6 animate-spin border-4 border-[#E8EDE6] border-t-[#4A5D4E]" />
+            <h3 className="font-bold text-[#2C3531] text-2xl mb-2" style={{ fontFamily: "Cormorant Garamond" }}>
+              {svcType === "mobile" ? "Confirming Details…" : "Opening Secure Payment…"}
             </h3>
-            <p className="text-sm text-gray-500">Please do not close this window.</p>
+            <p className="text-sm text-[#5A6B5D]">Please do not close this window.</p>
           </div>
         </div>
       )}
@@ -616,39 +580,39 @@ export default function BookingWizard({ initialService = "" }) {
       {/* Success Modal */}
       {success && booking && (
         <Modal onClose={reset}>
-          <div className="text-center mb-6">
-            <div className="w-20 h-20 rounded-full bg-emerald-100 mx-auto flex items-center justify-center mb-4 animate-in zoom-in">
-              <Check className="w-10 h-10 text-emerald-600" />
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 rounded-full bg-[#E8EDE6] mx-auto flex items-center justify-center mb-5 animate-luxe">
+              <Check className="w-10 h-10 text-[#4A5D4E]" />
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-1" style={{ fontFamily: "Cormorant Garamond" }}>
-              {booking.svcType === "mobile" ? "Appointment Booked!" : "Payment Confirmed!"}
+            <h3 className="text-3xl font-bold text-[#2C3531] mb-2" style={{ fontFamily: "Cormorant Garamond" }}>
+              {booking.svcType === "mobile" ? "Appointment Confirmed" : "Payment Successful"}
             </h3>
-            <p className="text-sm text-gray-500 font-medium">Ref: <span className="font-mono bg-gray-100 px-2 py-1 rounded-md text-gray-900">{booking.ref}</span></p>
+            <p className="text-sm text-[#5A6B5D] font-medium">Ref: <span className="font-mono bg-[#F4F1E9] px-2 py-1 rounded-md text-[#2C3531]">{booking.ref}</span></p>
           </div>
 
-          <div className="rounded-2xl p-5 mb-5 bg-teal-50/50 border border-teal-100">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600">Massage</span>
-              <span className="font-bold text-gray-900">{booking.serviceName}</span>
+          <div className="rounded-2xl p-6 mb-6 bg-[#F9F6F0] border border-[#E8EDE6]">
+            <div className="flex justify-between text-sm mb-3">
+              <span className="text-[#5A6B5D]">Ritual</span>
+              <span className="font-bold text-[#2C3531]">{booking.serviceName}</span>
             </div>
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600">Duration</span>
-              <span className="font-bold text-gray-900">{booking.duration} min</span>
+            <div className="flex justify-between text-sm mb-3">
+              <span className="text-[#5A6B5D]">Duration</span>
+              <span className="font-bold text-[#2C3531]">{booking.duration} min</span>
             </div>
-            <div className="flex justify-between items-center pt-3 mt-2 border-t border-teal-200/50">
-              <span className="text-sm font-bold text-gray-700">{booking.svcType === "mobile" ? "Total" : "Paid"}</span>
-              <span className="text-2xl font-bold text-teal-600" style={{ fontFamily: "Cormorant Garamond" }}>{fmt(booking.total)}</span>
+            <div className="flex justify-between items-center pt-4 mt-2 border-t border-[#E8EDE6]">
+              <span className="text-sm font-bold text-[#2C3531]">{booking.svcType === "mobile" ? "Total" : "Paid"}</span>
+              <span className="text-2xl font-bold text-[#4A5D4E]" style={{ fontFamily: "Cormorant Garamond" }}>{fmt(booking.total)}</span>
             </div>
           </div>
 
-          <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 mb-5 text-sm text-amber-800 leading-relaxed font-medium">
-            <b>What's next?</b> Our team will reach out on WhatsApp shortly to confirm your therapist and finalize details.
+          <div className="rounded-2xl bg-[#F4F1E9] border border-[#E8EDE6] p-5 mb-8 text-sm text-[#5A6B5D] leading-relaxed font-medium">
+            <b className="text-[#2C3531]">What's next?</b> Our concierge team will reach out on WhatsApp shortly to confirm your specialist and finalize details.
           </div>
 
-          <button onClick={sendWA} className="w-full py-4 rounded-xl font-bold text-white mb-3 transition-transform active:scale-95 shadow-lg shadow-green-500/30" style={{ background: "#25D366" }}>
-            💬 Send Details via WhatsApp
+          <button onClick={sendWA} className="w-full py-4 rounded-2xl font-bold text-white mb-3 transition-transform active:scale-95 shadow-xl bg-[#25D366]">
+            Send Details via WhatsApp
           </button>
-          <button onClick={reset} className="w-full py-3 rounded-xl font-bold text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
+          <button onClick={reset} className="w-full py-4 rounded-2xl font-bold text-sm bg-white border border-[#E8EDE6] text-[#2C3531] hover:bg-[#F4F1E9] transition-colors">
             Book Another Session
           </button>
         </Modal>
@@ -659,24 +623,24 @@ export default function BookingWizard({ initialService = "" }) {
 
 // ── Micro components ──
 const Label = ({ children }) => (
-  <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
+  <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#4A5D4E] mb-4">
     {children}
   </p>
 );
 
 const CheckMark = () => (
-  <div className="w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0 animate-in zoom-in shadow-sm">
+  <div className="w-6 h-6 rounded-full bg-[#4A5D4E] flex items-center justify-center flex-shrink-0 animate-luxe shadow-sm">
     <Check className="w-3.5 h-3.5 text-white stroke-[3px]" />
   </div>
 );
 
 const Field = ({ label, value, onChange, placeholder, type = "text" }) => (
   <div>
-    <label className="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-widest">{label} *</label>
+    <label className="block text-[10px] font-bold text-[#5A6B5D] mb-2 uppercase tracking-widest">{label} *</label>
     <input
       type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-      className="w-full px-4 py-3.5 rounded-xl text-sm font-medium border-2 transition-all duration-200 outline-none"
-      style={{ borderColor: value ? "#14b8a6" : "#e5e7eb", background: value ? "#f0fdfa" : "#f9fafb" }}
+      className="w-full px-5 py-4 rounded-2xl text-sm font-medium border-2 transition-all duration-200 outline-none"
+      style={{ borderColor: value ? "#4A5D4E" : "#E8EDE6", background: value ? "#F9F6F0" : "#FFF" }}
     />
   </div>
 );
@@ -685,41 +649,36 @@ const PhoneField = ({ label, value, error, onChange }) => {
   const digits = value.replace(/\D/g, "");
   return (
     <div>
-      <label className="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-widest">{label} *</label>
+      <label className="block text-[10px] font-bold text-[#5A6B5D] mb-2 uppercase tracking-widest">{label} *</label>
       <input
         type="tel" value={value} onChange={(e) => onChange(e.target.value)} placeholder="08012345678" maxLength={14}
-        className="w-full px-4 py-3.5 rounded-xl text-sm font-medium border-2 transition-all duration-200 outline-none"
-        style={{ borderColor: error ? "#ef4444" : digits.length === 11 ? "#14b8a6" : "#e5e7eb", background: digits.length === 11 ? "#f0fdfa" : "#f9fafb" }}
+        className="w-full px-5 py-4 rounded-2xl text-sm font-medium border-2 transition-all duration-200 outline-none"
+        style={{ borderColor: error ? "#C8795D" : digits.length === 11 ? "#4A5D4E" : "#E8EDE6", background: digits.length === 11 ? "#F9F6F0" : "#FFF" }}
       />
-      {error && <p className="text-[10px] font-bold text-red-500 mt-1.5 uppercase tracking-wider">{error}</p>}
-      {!error && digits.length > 0 && (
-        <p className={`text-[10px] font-bold mt-1.5 uppercase tracking-wider ${digits.length === 11 ? "text-emerald-600" : "text-gray-400"}`}>
-          {digits.length}/11 digits {digits.length === 11 && "✓ Valid"}
-        </p>
-      )}
+      {error && <p className="text-[10px] font-bold text-[#C8795D] mt-2 uppercase tracking-wider">{error}</p>}
     </div>
   );
 };
 
 const SummaryRow = ({ icon, label, value }) => (
-  <div className="flex items-center justify-between text-sm mb-2.5">
-    <span className="text-gray-500 flex items-center gap-2 text-xs font-medium">
+  <div className="flex items-center justify-between text-sm mb-3">
+    <span className="text-[#5A6B5D] flex items-center gap-2 text-xs font-medium">
       <span className="text-base">{icon}</span> {label}
     </span>
-    <span className="font-bold text-gray-900 text-right max-w-[60%] truncate">{value}</span>
+    <span className="font-bold text-[#2C3531] text-right max-w-[60%] truncate">{value}</span>
   </div>
 );
 
 const InfoBar = ({ icon, children }) => (
-  <div className="flex items-start gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-600 leading-relaxed font-medium">
-    <span className="flex-shrink-0 mt-0.5 text-teal-600">{icon}</span>
+  <div className="flex items-start gap-3 p-4 rounded-xl bg-[#F9F6F0] border border-[#E8EDE6] text-xs text-[#5A6B5D] leading-relaxed font-medium">
+    <span className="flex-shrink-0 mt-0.5 text-[#4A5D4E]">{icon}</span>
     <span>{children}</span>
   </div>
 );
 
 const Modal = ({ children, onClose }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in" onClick={onClose}>
-    <div className="bg-white rounded-[2rem] p-6 sm:p-8 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2C3531]/80 backdrop-blur-md animate-luxe" onClick={onClose}>
+    <div className="bg-white rounded-[2rem] p-8 sm:p-10 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto animate-luxe" onClick={(e) => e.stopPropagation()}>
       {children}
     </div>
   </div>
