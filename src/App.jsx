@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Phone, MapPin, Sparkles, Shield, Star, Gift, Crown, Check, ArrowLeft, Repeat, Pause, AlertCircle } from "lucide-react";
+import { Phone, MapPin, Sparkles, Shield, Star, Gift, Crown, Check, ArrowLeft, AlertCircle } from "lucide-react";
 import { SERVICES, ADDONS, MEMBERSHIP_PLAN, fmt, getPrice, durList, LOCATION_LABEL } from "./config/services";
-import { Tick, TF, PF, Modal } from "./components/ui";
 import LocationGate from "./components/LocationGate";
 import MassageGuide from "./components/MassageGuide";
 import BookingWizard from "./components/BookingWizard";
@@ -16,6 +15,38 @@ const TABS = [
   { id: "membership", icon: "♕", short: "Club", full: "Wellness Club" },
   { id: "giftcard", icon: "❦", short: "Gift", full: "Gift Cards" },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SELF-CONTAINED UI COMPONENTS
+// ─────────────────────────────────────────────────────────────────────────────
+const Tick = () => (
+  <div className="w-6 h-6 rounded-full bg-[#4A5D4E] flex items-center justify-center flex-shrink-0">
+    <Check className="w-3.5 h-3.5 text-white stroke-[3px]" />
+  </div>
+);
+const TF = ({ label, value, onChange, placeholder, type = "text" }) => (
+  <div>
+    <label className="block text-[10px] font-bold text-[#5A6B5D] mb-1.5 uppercase tracking-widest">{label}</label>
+    <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full px-5 py-4 rounded-xl text-sm font-medium border-2 transition-all duration-200 outline-none" style={{ borderColor: value ? "#4A5D4E" : "#E8EDE6", background: value ? "#F9F6F0" : "#FFF" }} />
+  </div>
+);
+const PF = ({ label, value, error, onChange }) => {
+  const digits = value.replace(/\D/g, "");
+  return (
+    <div>
+      <label className="block text-[10px] font-bold text-[#5A6B5D] mb-1.5 uppercase tracking-widest">{label}</label>
+      <input type="tel" value={value} onChange={(e) => onChange(e.target.value)} placeholder="08012345678" maxLength={14} className="w-full px-5 py-4 rounded-xl text-sm font-medium border-2 transition-all duration-200 outline-none" style={{ borderColor: error ? "#C8795D" : digits.length === 11 ? "#4A5D4E" : "#E8EDE6", background: digits.length === 11 ? "#F9F6F0" : "#FFF" }} />
+      {error && <p className="text-[10px] font-bold text-[#C8795D] mt-2 uppercase tracking-wider">{error}</p>}
+    </div>
+  );
+};
+const Modal = ({ children, onClose }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2C3531]/80 backdrop-blur-md animate-luxe" onClick={onClose}>
+    <div className="bg-white rounded-[2rem] p-8 sm:p-10 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto animate-luxe" onClick={(e) => e.stopPropagation()}>
+      {children}
+    </div>
+  </div>
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS & CUSTOM TOAST
@@ -65,9 +96,6 @@ const paystackPay = ({ amount, meta, onSuccess, onFailure, email, ref }) => {
 
 const sendWA = (msg) => { window.location.href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`; };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SHARED UI
-// ─────────────────────────────────────────────────────────────────────────────
 const FC = ({ children }) => (
   <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 shadow-2xl shadow-[#4A5D4E]/5 border border-[#E8EDE6]">{children}</div>
 );
@@ -95,7 +123,7 @@ const SubLabel = ({ children }) => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MEMBERSHIP (1x vs 2x Logic)
+// MEMBERSHIP
 // ─────────────────────────────────────────────────────────────────────────────
 const MembershipSection = ({ sendEmail, showToast }) => {
   const plan = MEMBERSHIP_PLAN;
@@ -124,13 +152,7 @@ const MembershipSection = ({ sendEmail, showToast }) => {
     if (!mDone) return showToast("Please complete all fields.");
     setMLoading(true);
     const svcObj = SERVICES.find((s) => s.id === mSvc);
-
-    const data = {
-      name: mName, phone: mPhone, email: mEmail, plan: `${plan.name} (${mSessions}x/month)`,
-      service: svcObj?.name, location: LOCATION_LABEL[mSvcType], duration: `${mDur} minutes`,
-      sessions: mSessions, normalPrice: totalWithoutDiscount,
-      monthlyAmount: finalMonthlyPrice, savedPerMonth: discountAmount
-    };
+    const data = { name: mName, phone: mPhone, email: mEmail, plan: `${plan.name} (${mSessions}x/month)`, service: svcObj?.name, location: LOCATION_LABEL[mSvcType], duration: `${mDur} minutes`, sessions: mSessions, normalPrice: totalWithoutDiscount, monthlyAmount: finalMonthlyPrice, savedPerMonth: discountAmount };
 
     paystackPay({
       amount: finalMonthlyPrice, email: mEmail,
@@ -540,10 +562,9 @@ const GiftCardSection = ({ sendEmail, showToast }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAIN APP (Controls the whole website)
+// MAIN APP
 // ─────────────────────────────────────────────────────────────────────────────
 const VivifySpaWebsite = () => {
-  // State to control which tab is open (Defaults to "booking" so the Home page shows first)
   const [activeTab, setActiveTab] = useState("booking");
   const [bookingCity, setBookingCity] = useState(null);
   const [preselectedService, setPreselectedService] = useState("");
@@ -577,7 +598,6 @@ const VivifySpaWebsite = () => {
     document.getElementById("wizard-start")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Hero is only hidden on the Sports and Gift Card pages for a focused booking experience
   const hideHero = activeTab === "sports" || activeTab === "giftcard";
 
   return (
@@ -639,7 +659,7 @@ const VivifySpaWebsite = () => {
         </div>
       </header>
 
-      {/* Hero Section (Shows on Home) */}
+      {/* Hero Section */}
       {!hideHero && (
         <section className="pt-16 pb-24 sm:pt-24 sm:pb-32 px-6 relative overflow-hidden flex flex-col items-center justify-center text-center">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[#E8EDE6] rounded-full blur-3xl opacity-40 -z-10" />
@@ -656,10 +676,8 @@ const VivifySpaWebsite = () => {
         </section>
       )}
 
-      {/* Main Content Area (Switches based on Tab) */}
+      {/* Main Content */}
       <div id="main" className="min-h-screen">
-
-        {/* TAB 1: HOME / BOOKING */}
         {activeTab === "booking" && (
           <div className="px-4 sm:px-6">
             {!bookingCity && <LocationGate onSelectCity={setBookingCity} />}
@@ -686,17 +704,14 @@ const VivifySpaWebsite = () => {
           </div>
         )}
 
-        {/* TAB 2: SPORTS */}
         {activeTab === "sports" && <SportsMassage showToast={showToast} />}
 
-        {/* TAB 3: MEMBERSHIP */}
         {activeTab === "membership" && (
           <div className="px-4 sm:px-6 pt-12">
             <MembershipSection sendEmail={sendEmail} showToast={showToast} />
           </div>
         )}
 
-        {/* TAB 4: GIFT CARD */}
         {activeTab === "giftcard" && (
           <div className="px-4 sm:px-6 pt-12">
             <GiftCardSection sendEmail={sendEmail} showToast={showToast} />

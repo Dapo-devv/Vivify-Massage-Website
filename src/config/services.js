@@ -4,14 +4,14 @@ export const PRICING = {
     "deep-tissue": { 60: 30000, 90: 40000, 120: 50000 },
     "full-body": { 60: 30000, 90: 40000, 120: 50000 },
     sports: { 60: 50000, 90: 70000 },
-    "deep-tissue-sports": { 60: 45000, 90: 60000 }, // <--- Deep Tissue Sports Price
+    "deep-tissue-sports": { 60: 45000, 90: 60000 },
   },
   mobile: {
     swedish: { 60: 35000, 90: 50000, 120: 65000 },
     "deep-tissue": { 60: 40000, 90: 55000, 120: 70000 },
     "full-body": { 60: 40000, 90: 55000, 120: 70000 },
     sports: { 60: 70000, 90: 95000 },
-    "deep-tissue-sports": { 60: 65000, 90: 85000 }, // <--- Deep Tissue Sports Price
+    "deep-tissue-sports": { 60: 65000, 90: 85000 },
   },
 };
 
