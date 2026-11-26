@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Phone, MapPin, Sparkles, Shield, Star, Gift, Crown, Check, ArrowLeft, Repeat, Pause, AlertCircle, ShoppingBag } from "lucide-react";
-import { SERVICES, MEMBERSHIP_PLAN, fmt, getPrice, durList, LOCATION_LABEL } from "./config/services";
+import { Phone, MapPin, Sparkles, Shield, Star, Gift, Crown, Check, ArrowLeft, Repeat, Pause, AlertCircle } from "lucide-react";
+import { SERVICES, ADDONS, MEMBERSHIP_PLAN, fmt, getPrice, durList, LOCATION_LABEL } from "./config/services";
 import { Tick, TF, PF, Modal } from "./components/ui";
 import LocationGate from "./components/LocationGate";
 import MassageGuide from "./components/MassageGuide";
@@ -95,14 +95,14 @@ const SubLabel = ({ children }) => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MEMBERSHIP (UPDATED WITH 1x vs 2x logic)
+// MEMBERSHIP (1x vs 2x Logic)
 // ─────────────────────────────────────────────────────────────────────────────
 const MembershipSection = ({ sendEmail, showToast }) => {
   const plan = MEMBERSHIP_PLAN;
   const [mSvcType, setMSvcType] = useState("studio");
   const [mSvc, setMSvc] = useState("");
   const [mDur, setMDur] = useState("");
-  const [mSessions, setMSessions] = useState(1); // 1 or 2 sessions per month
+  const [mSessions, setMSessions] = useState(1);
   const [mName, setMName] = useState("");
   const [mPhone, setMPhone] = useState("");
   const [mEmail, setMEmail] = useState("");
@@ -111,11 +111,8 @@ const MembershipSection = ({ sendEmail, showToast }) => {
   const [mSuccess, setMSuccess] = useState(false);
   const [mDetails, setMDetails] = useState(null);
 
-  // Pricing logic
   const basePrice = getPrice(mSvcType, mSvc, mDur);
   const totalWithoutDiscount = basePrice * mSessions;
-
-  // Apply 5% discount only if 2 sessions
   const discountAmount = mSessions === 2 ? totalWithoutDiscount * 0.05 : 0;
   const finalMonthlyPrice = Math.round(totalWithoutDiscount - discountAmount);
 
@@ -159,7 +156,6 @@ const MembershipSection = ({ sendEmail, showToast }) => {
           A ritual a month. <br />
           <span className="italic text-[#C8795D]">A lifetime of balance.</span>
         </h2>
-        <p className="text-[#5A6B5D] text-lg max-w-lg mx-auto font-light">Prioritize your well-being with our exclusive membership. Book whenever it suits you.</p>
       </div>
 
       <div className="rounded-[2.5rem] overflow-hidden mb-10 shadow-2xl border border-[#E8EDE6] bg-white">
@@ -186,8 +182,6 @@ const MembershipSection = ({ sendEmail, showToast }) => {
           </ul>
 
           <div className="space-y-8 pt-8 border-t border-[#F4F1E9]">
-
-            {/* 1x vs 2x Toggle */}
             <div>
               <SubLabel>How many sessions per month?</SubLabel>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -375,7 +369,6 @@ const GiftCardSection = ({ sendEmail, showToast }) => {
           Give the gift of <br />
           <span className="italic text-[#C8795D]">pure serenity.</span>
         </h2>
-        <p className="text-[#5A6B5D] text-lg max-w-lg mx-auto font-light">A thoughtful gesture for someone special. We will coordinate directly with them to arrange their experience.</p>
       </div>
 
       <div className="mb-10">
@@ -390,15 +383,11 @@ const GiftCardSection = ({ sendEmail, showToast }) => {
               </div>
               <Gift className="w-6 h-6 text-[#FDF4F2] opacity-50" />
             </div>
-
             <div>
               <p className="text-xs uppercase tracking-widest mb-2 text-white/70">Prepared for</p>
               <p className="text-3xl font-bold mb-4" style={{ fontFamily: "Cormorant Garamond" }}>{gRName || "Their Name"}</p>
-              <p className="text-sm italic mb-8 px-6 py-4 rounded-2xl bg-black/10 border-l-2 border-white/30 text-white/90">
-                "{gCaption || "Wishing you pure relaxation 💆"}"
-              </p>
+              <p className="text-sm italic mb-8 px-6 py-4 rounded-2xl bg-black/10 border-l-2 border-white/30 text-white/90">"{gCaption || "Wishing you pure relaxation 💆"}"</p>
             </div>
-
             <div className="flex justify-between items-end pt-6 border-t border-white/20">
               <div>
                 <p className="text-xs text-white/70">{gSvc ? SERVICES.find((s) => s.id === gSvc)?.name : "Select a service"}</p>
@@ -577,7 +566,7 @@ const VivifySpaWebsite = () => {
 
   const switchTab = (id) => {
     setActiveTab(id);
-    if (id === "booking" && bookingCity === "ilorin") { /* Keep ilorin state */ }
+    if (id === "booking" && bookingCity === "ilorin") { }
     else if (id === "booking") { setBookingCity(null); }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -692,7 +681,7 @@ const VivifySpaWebsite = () => {
           </div>
         )}
 
-        {activeTab === "sports" && <SportsMassage />}
+        {activeTab === "sports" && <SportsMassage showToast={showToast} />}
 
         {activeTab === "membership" && (
           <div className="px-4 sm:px-6 pt-12">
