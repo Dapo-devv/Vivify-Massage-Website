@@ -10,7 +10,7 @@ import { useAvailability } from "../hooks/useAvailability";
 const WA_NUMBER = "2347040723894";
 const PAYSTACK_KEY = "pk_live_915663b76742c16f999c99e6251596ee7c5c9584";
 
-// 🚨 EXPLICIT PRICING LOGIC (Impossible to fail)
+// 🚨 EXPLICIT PRICING LOGIC
 const getExplicitPrice = (svcType, techniqueId, duration) => {
   if (techniqueId === "deep-tissue-sports") {
     if (svcType === "studio") return duration === 60 ? 45000 : 60000;
@@ -52,13 +52,9 @@ export default function SportsMassage({ showToast }) {
     window.scrollTo({ top: Math.max(y, 0), behavior: "smooth" });
   }, [step]);
 
-  // Calculate prices using the explicit function
   const currentPrice = getExplicitPrice(svcType, technique, duration);
   const price60 = getExplicitPrice(svcType, technique, 60);
   const price90 = getExplicitPrice(svcType, technique, 90);
-
-  // Debugging log to check browser console
-  console.log(`Selected: ${technique} | Type: ${svcType} | Price: ${currentPrice}`);
 
   const techniqueObj = SPORTS_TECHNIQUES.find((t) => t.id === technique);
   const therapistInfo = getSportsTherapistInfo();
