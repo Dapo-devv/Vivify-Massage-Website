@@ -214,7 +214,8 @@ export default function SportsMassage({ showToast }) {
 
             <div>
               <Label>Stretching Technique</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* CHANGED: grid-cols-3 to fit the new Deep Tissue Sports option */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {SPORTS_TECHNIQUES.map((t) => {
                   const sel = technique === t.id;
                   return (

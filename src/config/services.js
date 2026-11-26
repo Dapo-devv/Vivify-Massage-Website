@@ -65,7 +65,7 @@ export const ADDONS = [
     id: "scalp",
     name: "Scalp Massage",
     icon: "💆",
-    price: 10000, // Updated to 10k
+    price: 10000, // 10k
     minutes: 15,
     desc: "Pressure-point scalp and temple work",
   },
@@ -73,7 +73,7 @@ export const ADDONS = [
     id: "reflexology",
     name: "Foot Reflexology",
     icon: "👣",
-    price: 7000, // Updated to 7k
+    price: 7000, // 7k
     minutes: 10,
     desc: "Zone-based foot therapy",
   },
@@ -154,6 +154,13 @@ export const SPORTS_TECHNIQUES = [
     fullName: "Proprioceptive Neuromuscular Facilitation",
     blurb: "Contract-relax method for improving flexibility and peak performance.",
     icon: "⚡",
+  },
+  {
+    id: "deep-tissue-sports",
+    name: "Deep Tissue Sports",
+    fullName: "Deep Tissue Sports Massage",
+    blurb: "Intense pressure targeting deep muscle layers, knots, and sports-related tension.",
+    icon: "💪",
   },
 ];
 
