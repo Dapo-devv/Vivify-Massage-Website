@@ -1,52 +1,50 @@
-import { Loader2, Clock } from "lucide-react";
+import React from "react";
+import { Check } from "lucide-react";
 
-export default function SlotGrid({
-  available,
-  loading,
-  selected,
-  onSelect,
-  serviceType,
-}) {
-  if (loading)
+export default function SlotGrid({ available = [], loading, selected, onSelect, serviceType }) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center py-8 text-sm text-gray-400 gap-2">
-        <Loader2 className="w-4 h-4 animate-spin" /> Checking availability…
+      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="h-12 bg-gray-100 animate-pulse rounded-xl"></div>
+        ))}
       </div>
     );
+  }
 
-  if (!available?.length)
+  if (!available || available.length === 0) {
     return (
-      <div
-        className="flex items-center gap-2 p-4 rounded-xl text-sm"
-        style={{
-          background: "#fef3c7",
-          border: "1px solid #fde68a",
-          color: "#92400e",
-        }}
-      >
-        <Clock className="w-4 h-4" /> No slots fit your duration on this day.
-        Try another date.
+      <div className="text-center p-6 bg-amber-50 rounded-2xl border-2 border-amber-100">
+        <p className="text-sm text-amber-800 font-medium">
+          No slots available for this date. Please select another day.
+        </p>
       </div>
     );
+  }
 
   return (
-    <div
-      className={`grid gap-2 ${serviceType === "mobile" ? "grid-cols-4 sm:grid-cols-6" : "grid-cols-3 sm:grid-cols-5"}`}
-    >
-      {available.map((t) => {
-        const sel = selected === t;
+    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+      {available.map((time) => {
+        const isSelected = selected === time;
         return (
           <button
-            key={t}
-            onClick={() => onSelect(t)}
-            className="p-2 rounded-lg text-xs font-semibold transition-all border-2"
-            style={{
-              background: sel ? "#0891b2" : "white",
-              color: sel ? "white" : "#374151",
-              borderColor: sel ? "#06b6d4" : "#e5e7eb",
-            }}
+            key={time}
+            onClick={() => onSelect(time)}
+            className={`relative p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1
+              ${isSelected
+                ? "border-teal-500 bg-teal-50 shadow-sm"
+                : "border-gray-200 bg-white hover:border-teal-300 hover:bg-gray-50"
+              }
+            `}
           >
-            {t}
+            <span className={`text-xs font-bold ${isSelected ? "text-teal-700" : "text-gray-700"}`}>
+              {time}
+            </span>
+            {isSelected && (
+              <div className="absolute -top-2 -right-2 w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center shadow-md animate-in zoom-in">
+                <Check className="w-3 h-3 text-white" />
+              </div>
+            )}
           </button>
         );
       })}
