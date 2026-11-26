@@ -40,7 +40,10 @@ export default function SportsMassage({ showToast }) {
     window.scrollTo({ top: Math.max(y, 0), behavior: "smooth" });
   }, [step]);
 
-  const price = PRICING[svcType]?.sports?.[duration] || 0;
+  // Dynamic price based on technique
+  const getPricingKey = () => technique === "deep-tissue-sports" ? "deep-tissue-sports" : "sports";
+  const price = PRICING[svcType]?.[getPricingKey()]?.[duration] || 0;
+
   const techniqueObj = SPORTS_TECHNIQUES.find((t) => t.id === technique);
   const therapistInfo = getSportsTherapistInfo();
 
@@ -213,8 +216,7 @@ export default function SportsMassage({ showToast }) {
             </div>
 
             <div>
-              <Label>Stretching Technique</Label>
-              {/* CHANGED: grid-cols-3 to fit the new Deep Tissue Sports option */}
+              <Label>Technique</Label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {SPORTS_TECHNIQUES.map((t) => {
                   const sel = technique === t.id;
@@ -237,7 +239,7 @@ export default function SportsMassage({ showToast }) {
               <Label>Session Duration</Label>
               <div className="grid grid-cols-2 gap-3">
                 {SPORTS_DURATIONS.map((m) => {
-                  const p = PRICING[svcType].sports[m];
+                  const p = PRICING[svcType]?.[getPricingKey()]?.[m] || 0;
                   const sel = duration === m;
                   return (
                     <button key={m} onClick={() => setDuration(m)} className="p-5 rounded-xl border-2 text-center transition-all" style={{ borderColor: sel ? "#4A5D4E" : "#E8EDE6", background: sel ? "#F9F6F0" : "white" }}>
