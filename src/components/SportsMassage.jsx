@@ -10,6 +10,18 @@ import { useAvailability } from "../hooks/useAvailability";
 const WA_NUMBER = "2347040723894";
 const PAYSTACK_KEY = "pk_live_915663b76742c16f999c99e6251596ee7c5c9584";
 
+// 🚨 EXPLICIT PRICING LOGIC (Impossible to fail)
+const getExplicitPrice = (svcType, techniqueId, duration) => {
+  if (techniqueId === "deep-tissue-sports") {
+    if (svcType === "studio") return duration === 60 ? 45000 : 60000;
+    if (svcType === "mobile") return duration === 60 ? 65000 : 85000;
+  }
+  // Default Sports Pricing (MET / PNF)
+  if (svcType === "studio") return duration === 60 ? 50000 : 70000;
+  if (svcType === "mobile") return duration === 60 ? 70000 : 95000;
+  return 0;
+};
+
 export default function SportsMassage({ showToast }) {
   const [step, setStep] = useState(0);
 
@@ -40,26 +52,22 @@ export default function SportsMassage({ showToast }) {
     window.scrollTo({ top: Math.max(y, 0), behavior: "smooth" });
   }, [step]);
 
-  // ── EXPLICIT PRICING LOGIC ──
-  // If the user selects "deep-tissue-sports", it pulls the new price. Otherwise, it uses standard sports pricing.
-  const isDeepTissueSports = technique === "deep-tissue-sports";
-  const pricingKey = isDeepTissueSports ? "deep-tissue-sports" : "sports";
+  // Calculate prices using the explicit function
+  const currentPrice = getExplicitPrice(svcType, technique, duration);
+  const price60 = getExplicitPrice(svcType, technique, 60);
+  const price90 = getExplicitPrice(svcType, technique, 90);
 
-  const currentPrice = PRICING[svcType]?.[pricingKey]?.[duration] || 0;
-  const price60 = PRICING[svcType]?.[pricingKey]?.[60] || 0;
-  const price90 = PRICING[svcType]?.[pricingKey]?.[90] || 0;
+  // Debugging log to check browser console
+  console.log(`Selected: ${technique} | Type: ${svcType} | Price: ${currentPrice}`);
 
   const techniqueObj = SPORTS_TECHNIQUES.find((t) => t.id === technique);
   const therapistInfo = getSportsTherapistInfo();
 
   const { available, loading: slotsLoading } = useAvailability({
-    date,
-    serviceType: svcType,
-    minutes: duration,
+    date, serviceType: svcType, minutes: duration,
   });
 
-  const toggleFocus = (f) =>
-    setFocus((prev) => prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]);
+  const toggleFocus = (f) => setFocus((prev) => prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]);
 
   const validatePhone = (v) => {
     setPhone(v);
@@ -158,8 +166,6 @@ export default function SportsMassage({ showToast }) {
 
   return (
     <div ref={topRef} className="max-w-3xl mx-auto py-12 px-4 sm:px-6 animate-luxe">
-
-      {/* Header */}
       <div className="text-center mb-10">
         <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-4 text-xs font-bold tracking-widest uppercase bg-[#E8EDE6] text-[#4A5D4E]">
           <Activity className="w-3.5 h-3.5" /> Athletic Recovery
@@ -171,7 +177,6 @@ export default function SportsMassage({ showToast }) {
         <p className="text-[#5A6B5D] max-w-md mx-auto text-lg font-light">MET & PNF stretching for athletes who train hard.</p>
       </div>
 
-      {/* Progress */}
       <div className="mb-10 text-center">
         <p className="text-[10px] font-bold text-[#A3B19B] uppercase tracking-[0.2em] mb-4">
           Step {step + 1} of 3 — {["Recovery Setup", "Schedule", "Confirm"][step]}
@@ -184,11 +189,8 @@ export default function SportsMassage({ showToast }) {
       </div>
 
       <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 shadow-2xl border border-[#E8EDE6]">
-
-        {/* STEP 0: Recovery Setup */}
         {step === 0 && (
           <div className="space-y-8 animate-luxe">
-            {/* Therapist Info */}
             <div className="rounded-2xl p-6 bg-[#F9F6F0] border border-[#E8EDE6]">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-[#4A5D4E] text-white">
@@ -278,7 +280,6 @@ export default function SportsMassage({ showToast }) {
           </div>
         )}
 
-        {/* STEP 1: Schedule */}
         {step === 1 && (
           <div className="space-y-8 animate-luxe">
             <div>
@@ -296,7 +297,6 @@ export default function SportsMassage({ showToast }) {
           </div>
         )}
 
-        {/* STEP 2: Confirm */}
         {step === 2 && (
           <div className="space-y-8 animate-luxe">
             <div>
@@ -326,7 +326,6 @@ export default function SportsMassage({ showToast }) {
         )}
       </div>
 
-      {/* Navigation Buttons */}
       <div className="flex gap-3 mt-8">
         {step > 0 && (
           <button onClick={back} className="px-6 py-4 rounded-2xl font-bold text-sm border-2 border-[#E8EDE6] bg-white text-[#5A6B5D] hover:bg-[#F4F1E9] transition-all flex-shrink-0">
@@ -344,7 +343,6 @@ export default function SportsMassage({ showToast }) {
         )}
       </div>
 
-      {/* Loading Overlay */}
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#2C3531]/80 backdrop-blur-md animate-luxe">
           <div className="bg-[#F9F6F0] rounded-3xl p-10 text-center shadow-2xl mx-4 flex flex-col items-center max-w-sm w-full border border-[#E8EDE6]">
@@ -354,7 +352,6 @@ export default function SportsMassage({ showToast }) {
         </div>
       )}
 
-      {/* Success Modal */}
       {success && booking && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2C3531]/80 backdrop-blur-md animate-luxe">
           <div className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto animate-luxe">
@@ -380,7 +377,6 @@ export default function SportsMassage({ showToast }) {
   );
 }
 
-// Micro Components
 const Label = ({ children }) => <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#4A5D4E] mb-3">{children}</p>;
 const Field = ({ label, value, onChange, placeholder, type = "text" }) => (
   <div>
